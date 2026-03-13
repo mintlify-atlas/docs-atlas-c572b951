@@ -1,0 +1,204 @@
+---
+title: "Tiempo"
+description: "Weather activity that fetches and displays current weather data from OpenWeatherMap API"
+---
+
+## Overview
+
+`Tiempo` is an activity that displays current weather information for Huelva, Spain. It fetches data from the OpenWeatherMap API using Volley, parses JSON responses, and displays temperature, weather conditions, humidity, pressure, wind speed, and cloud coverage.
+
+## Class Signature
+
+```java
+public class Tiempo extends AppCompatActivity
+```
+
+**Package:** `com.example.huelvapedia.ApiTiempo`
+
+**Extends:** `AppCompatActivity`
+
+## API Constants
+
+| Constant | Type | Value | Description |
+|----------|------|-------|-------------|
+| `URL_BASE` | `String` | `"http://api.openweathermap.org/data/2.5/weather"` | OpenWeatherMap API base URL |
+| `API_KEY` | `String` | `"c0d138083fb0634d6d5cd36adafc9a77"` | API key for authentication |
+
+<Warning>
+The API key is currently hardcoded in the source. The code includes a TODO comment recommending moving it to `local.properties` and accessing via `BuildConfig` to avoid exposure.
+</Warning>
+
+## Fields
+
+### TextView Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `tvTemperatura` | `TextView` | Displays current temperature in Celsius |
+| `tvDescripcion` | `TextView` | Displays weather description (translated to Spanish) |
+| `tvSensacion` | `TextView` | Displays "feels like" temperature |
+| `tvPresion` | `TextView` | Displays atmospheric pressure in hPa |
+| `tvHumedad` | `TextView` | Displays humidity percentage |
+| `tvNubes` | `TextView` | Displays cloud coverage percentage |
+| `tvViento` | `TextView` | Displays wind speed in m/s |
+
+### Other Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `imagenDelTiempo` | `ImageView` | Displays weather condition icon |
+| `formatoDecimal` | `DecimalFormat` | Formatter for temperature values (pattern: `"#.#"`) |
+
+## Methods
+
+<Accordion title="onCreate()">
+  ```java
+  @Override
+  protected void onCreate(Bundle savedInstanceState)
+  ```
+  
+  Initializes the weather activity:
+  
+  1. **Binds UI components** from layout (`activity_tiempo`):
+     - TextViews for all weather data fields
+     - ImageView for weather icon
+  
+  2. **Configures ActionBar**:
+     - Sets Huelva icon (`R.mipmap.ic_escudohuelva`)
+     - Enables home display
+  
+  3. **Constructs API URL**:
+     ```java
+     String urlCompleta = URL_BASE + "?q=Huelva,ES&appid=" + API_KEY;
+     ```
+  
+  4. **Creates Volley StringRequest** (POST method):
+     - **On success**: Parses JSON response and updates UI
+     - **On error**: Displays error toast
+  
+  5. **Parses JSON response**:
+     - Extracts weather description from `weather` array
+     - Extracts temperature, feels-like, pressure, humidity from `main` object
+     - Extracts wind speed from `wind` object
+     - Extracts cloud coverage from `clouds` object
+     - Converts temperature from Kelvin to Celsius (subtracts 273.15)
+  
+  6. **Updates UI**:
+     - Calls `traducirDescripcion()` to translate and set weather icon
+     - Sets all TextViews with formatted weather data
+  
+  7. **Executes request** using Volley RequestQueue
+  
+  <ParamField path="savedInstanceState" type="Bundle">
+    Saved state from previous instance
+  </ParamField>
+  
+  **Location:** `Tiempo.java:35`
+</Accordion>
+
+<Accordion title="traducirDescripcion()">
+  ```java
+  private void traducirDescripcion(String descripcion)
+  ```
+  
+  Translates English weather descriptions from the API to Spanish and sets the corresponding weather icon.
+  
+  ### Supported Weather Conditions:
+  
+  | English | Spanish | Icon Resource |
+  |---------|---------|---------------|
+  | `"clear sky"` | "Despejado" | `R.mipmap.ic_soleado` |
+  | `"few clouds"` | "Ligeramente nublado" | `R.mipmap.ic_ligeramentenublado` |
+  | `"scattered clouds"` | "Nubes dispersas" | `R.mipmap.ic_nubesdispersas` |
+  | `"overcast clouds"` | "Nublado" | `R.mipmap.ic_nublado` |
+  | `"light rain"` | "Lluvia ligera" | `R.mipmap.ic_lluvialigera` |
+  | `"broken clouds"` | "Nubes rotas" | `R.mipmap.ic_nubesrotas` |
+  | `"heavy intensity rain"` | "Lluvia pesada" | `R.mipmap.ic_lluviafuerte` |
+  | `"moderate rain"` | "Lluvia moderada" | `R.mipmap.ic_lluviamoderada` |
+  
+  Each case sets both the text in `tvDescripcion` and the image resource in `imagenDelTiempo`.
+  
+  <ParamField path="descripcion" type="String">
+    English weather description from API
+  </ParamField>
+  
+  **Location:** `Tiempo.java:97`
+</Accordion>
+
+## JSON Response Structure
+
+The activity expects the following JSON structure from OpenWeatherMap API:
+
+```json
+{
+  "weather": [
+    {
+      "description": "clear sky"
+    }
+  ],
+  "main": {
+    "temp": 293.15,
+    "feels_like": 292.15,
+    "pressure": 1013,
+    "humidity": 65
+  },
+  "wind": {
+    "speed": "3.5"
+  },
+  "clouds": {
+    "all": "20"
+  }
+}
+```
+
+## API Request Details
+
+### Full URL Format
+```
+http://api.openweathermap.org/data/2.5/weather?q=Huelva,ES&appid=c0d138083fb0634d6d5cd36adafc9a77
+```
+
+### Request Method
+`POST` (via `Request.Method.POST`)
+
+### Query Parameters
+- `q`: "Huelva,ES" (city and country code)
+- `appid`: API key for authentication
+
+## Temperature Conversion
+
+Temperatures are converted from Kelvin (API format) to Celsius:
+
+```java
+double temp = jsonObjectMain.getDouble("temp") - 273.15;
+double sensacion = jsonObjectMain.getDouble("feels_like") - 273.15;
+```
+
+Formatted using `DecimalFormat("#.#")` for display.
+
+## UI Display Format
+
+```java
+tvTemperatura.setText(formatoDecimal.format(temp) + "ºC");
+tvSensacion.setText("Sensacion térmica: " + formatoDecimal.format(sensacion) + "ºC");
+tvHumedad.setText("Humedad: " + humedad + "%");
+tvNubes.setText("Cantidad de nubes: " + nubes + "%");
+tvViento.setText("Velocidad del viento: " + viento + "m/s (metros por segundo)");
+tvPresion.setText("Presión atmosférica: " + presion + " hPa");
+```
+
+## Dependencies
+
+- **Volley**: For HTTP requests
+- **org.json**: For JSON parsing
+- **ActionBar**: For displaying app icon
+
+## Error Handling
+
+```java
+error -> Toast.makeText(getApplicationContext(), 
+                       error.toString().trim(), 
+                       Toast.LENGTH_SHORT).show()
+```
+
+Displays error messages via Toast when API request fails.

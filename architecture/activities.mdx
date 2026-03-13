@@ -1,0 +1,371 @@
+---
+title: Activities
+description: Detailed documentation of all activities in HuelvaPedia
+---
+
+## Activity Overview
+
+HuelvaPedia consists of 4 main activities that manage different screens and user flows:
+
+1. **PantallaCarga** - Splash screen with connectivity check
+2. **MainActivity** - Main topic listing screen
+3. **Secundaria** - Subtopic listing screen
+4. **Tiempo** - Weather information screen
+
+---
+
+## PantallaCarga
+
+**File:** `PantallaCarga.java:1`
+
+### Purpose
+
+The splash screen that serves as the app's entry point. It checks for internet connectivity and displays loading animations before navigating to MainActivity.
+
+### Key Features
+
+- **Fullscreen display** with hidden action bar
+- **Loading animations** (top and bottom animations)
+- **Network connectivity monitoring**
+- **Automatic navigation** after 5 seconds if connected
+
+### Lifecycle Implementation
+
+```java
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, 
+                         WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    setContentView(R.layout.activity_pantalla_carga);
+    getSupportActionBar().hide();
+
+    animacionSuperior = AnimationUtils.loadAnimation(this, R.anim.top_animation);
+    animacionInferior = AnimationUtils.loadAnimation(this, R.anim.bottom_animation);
+
+    imagenLogo = findViewById(R.id.imagenlogo);
+    textoCarga = findViewById(R.id.textocarga);
+    sloganCarga = findViewById(R.id.slogancarga);
+    progressBar = findViewById(R.id.progressBar);
+
+    progressBar.getIndeterminateDrawable().setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+
+    imagenLogo.setAnimation(animacionSuperior);
+    textoCarga.setAnimation(animacionInferior);
+    sloganCarga.setAnimation(animacionInferior);
+    progressBar.setAnimation(animacionInferior);
+
+    checkConnectivity();
+}
+```
+
+### Connectivity Check
+
+The activity implements robust connectivity checking with automatic retry:
+
+```java
+private void checkConnectivity() {
+    final ConnectivityManager connectivityManager = 
+        (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+    final NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+
+    hayConexion = activeNetworkInfo != null && 
+                  activeNetworkInfo.isConnectedOrConnecting();
+
+    if (hayConexion) {
+        handler.postDelayed(navegarAPrincipal, DURACION_CARGA);
+    } else {
+        Toast.makeText(this, "SE DEBE DISPONER DE CONEXIÓN A INTERNET", 
+                       Toast.LENGTH_LONG).show();
+        connectivityManager.registerNetworkCallback(
+            new NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build(), connectivityCallback);
+        monitorizando = true;
+    }
+}
+```
+
+### Memory Management
+
+```java
+@Override
+protected void onDestroy() {
+    handler.removeCallbacksAndMessages(null); // Prevent memory leaks
+    super.onDestroy();
+}
+```
+
+<Warning>
+The activity properly cleans up the `Handler` in `onDestroy()` to prevent memory leaks when callbacks are pending.
+</Warning>
+
+---
+
+## MainActivity
+
+**File:** `MainActivity.java:1`
+
+### Purpose
+
+Displays the main list of topics from Firebase's "principal" node. This is the primary navigation hub of the app.
+
+### Key Features
+
+- RecyclerView displaying main topics
+- Firebase Realtime Database integration
+- Weather button navigation
+- Action bar with custom icon
+
+### onCreate Implementation
+
+```java
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    botonTiempo = findViewById(R.id.botontiempo);
+
+    ActionBar actionBar = getSupportActionBar();
+    actionBar.setIcon(R.mipmap.ic_escudohuelva);
+    actionBar.setDisplayShowHomeEnabled(true);
+
+    recyclerView = findViewById(R.id.recicler);
+    recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+    listaElementos = new ArrayList<>();
+
+    reference = FirebaseDatabase.getInstance().getReference().child("principal");
+
+    reference.addValueEventListener(new ValueEventListener() {
+        @Override
+        public void onDataChange(@NonNull DataSnapshot snapshot) {
+            listaElementos.clear(); // Prevents duplication on Firebase updates
+            for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
+                Elementos elemento = dataSnapshot.getValue(Elementos.class);
+                listaElementos.add(elemento);
+            }
+            adaptador = new Adaptador(MainActivity.this, listaElementos);
+            recyclerView.setAdapter(adaptador);
+        }
+
+        @Override
+        public void onCancelled(@NonNull DatabaseError error) {
+            Toast.makeText(MainActivity.this, "Algo ha fallado", Toast.LENGTH_SHORT).show();
+        }
+    });
+
+    botonTiempo.setOnClickListener(v -> {
+        Intent intent = new Intent(v.getContext(), Tiempo.class);
+        startActivity(intent);
+    });
+}
+```
+
+### Firebase Integration
+
+See `MainActivity.java:48-70` for the complete Firebase setup.
+
+<Info>
+The `listaElementos.clear()` call in `onDataChange()` prevents duplicate entries when Firebase sends update notifications.
+</Info>
+
+---
+
+## Secundaria
+
+**File:** `Secundaria.java:1`
+
+### Purpose
+
+Displays subtopics for a selected main topic. Receives the topic name via Intent and queries the corresponding Firebase node.
+
+### Key Differences from MainActivity
+
+1. **Hidden weather button** - `botonTiempo.setVisibility(View.GONE)`
+2. **Dynamic Firebase reference** - Based on passed topic name
+3. **Name normalization** - Converts topic name to lowercase without spaces
+
+### Intent Handling
+
+```java
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    botonTiempo = findViewById(R.id.botontiempo);
+    botonTiempo.setVisibility(View.GONE); // Hide weather button in subtopics
+
+    ActionBar actionBar = getSupportActionBar();
+    actionBar.setIcon(R.mipmap.ic_escudohuelva);
+    actionBar.setDisplayShowHomeEnabled(true);
+
+    recyclerView = findViewById(R.id.recicler);
+    recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+    listaElementos = new ArrayList<>();
+
+    // Receive topic name and normalize for Firebase reference
+    Intent intent = getIntent();
+    String nombreReferencia = intent.getStringExtra("Nombre")
+            .replace(" ", "")
+            .toLowerCase();
+
+    reference = FirebaseDatabase.getInstance().getReference().child(nombreReferencia);
+
+    reference.addValueEventListener(new ValueEventListener() {
+        @Override
+        public void onDataChange(@NonNull DataSnapshot snapshot) {
+            listaElementos.clear();
+            for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
+                Elementos elemento = dataSnapshot.getValue(Elementos.class);
+                listaElementos.add(elemento);
+            }
+            adaptador = new Adaptador(Secundaria.this, listaElementos);
+            recyclerView.setAdapter(adaptador);
+        }
+
+        @Override
+        public void onCancelled(@NonNull DatabaseError error) {
+            Toast.makeText(Secundaria.this, "Algo ha fallado", Toast.LENGTH_SHORT).show();
+        }
+    });
+}
+```
+
+### Navigation Example
+
+From `Adaptador.java:62-66`, navigation to Secundaria:
+
+```java
+holder.itemView.setOnClickListener(v -> {
+    Intent intent = new Intent(v.getContext(), Secundaria.class);
+    intent.putExtra("Nombre", elemento.getNombre());
+    v.getContext().startActivity(intent);
+});
+```
+
+---
+
+## Tiempo (Weather Activity)
+
+**File:** `ApiTiempo/Tiempo.java:1`
+
+### Purpose
+
+Displays current weather information for Huelva using the OpenWeatherMap API.
+
+### Key Features
+
+- REST API integration using Volley library
+- JSON parsing for weather data
+- Temperature conversion from Kelvin to Celsius
+- Weather description translation (English to Spanish)
+- Dynamic weather icons
+
+### onCreate and API Request
+
+```java
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_tiempo);
+
+    tvTemperatura = findViewById(R.id.temperatura);
+    tvDescripcion = findViewById(R.id.descripcion);
+    tvSensacion = findViewById(R.id.sensacion);
+    tvPresion = findViewById(R.id.presion);
+    tvHumedad = findViewById(R.id.humedad);
+    tvNubes = findViewById(R.id.nubes);
+    tvViento = findViewById(R.id.viento);
+
+    imagenDelTiempo = findViewById(R.id.imagentiempo);
+
+    ActionBar actionBar = getSupportActionBar();
+    actionBar.setIcon(R.mipmap.ic_escudohuelva);
+    actionBar.setDisplayShowHomeEnabled(true);
+
+    String urlCompleta = URL_BASE + "?q=Huelva,ES&appid=" + API_KEY;
+
+    StringRequest stringRequest = new StringRequest(Request.Method.POST, urlCompleta,
+        response -> {
+            try {
+                JSONObject jsonResponse = new JSONObject(response);
+                JSONArray jsonArray = jsonResponse.getJSONArray("weather");
+                JSONObject jsonObjectWeather = jsonArray.getJSONObject(0);
+                String descripcion = jsonObjectWeather.getString("description");
+                JSONObject jsonObjectMain = jsonResponse.getJSONObject("main");
+                double temp = jsonObjectMain.getDouble("temp") - 273.15;
+                double sensacion = jsonObjectMain.getDouble("feels_like") - 273.15;
+                // ... more parsing ...
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        },
+        error -> Toast.makeText(getApplicationContext(), 
+                               error.toString().trim(), 
+                               Toast.LENGTH_SHORT).show()
+    );
+
+    RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
+    requestQueue.add(stringRequest);
+}
+```
+
+### Description Translation
+
+See `Tiempo.java:94-134` for the complete translation method that maps English weather descriptions to Spanish equivalents and sets appropriate weather icons.
+
+<Warning>
+The API key is currently hardcoded in the source. The code includes a TODO comment at `Tiempo.java:25` suggesting moving it to `local.properties` for security.
+</Warning>
+
+---
+
+## Activity Navigation Flow
+
+<Steps>
+  <Step title="App Launch">
+    PantallaCarga checks internet connectivity
+  </Step>
+  
+  <Step title="Main Screen">
+    MainActivity displays primary topics from Firebase
+  </Step>
+  
+  <Step title="Subtopic Navigation">
+    User clicks a topic → Secundaria loads with topic name passed via Intent
+  </Step>
+  
+  <Step title="Weather Access">
+    User clicks weather button → Tiempo activity displays current weather
+  </Step>
+</Steps>
+
+## Screen Orientation Handling
+
+<Note>
+All activities use the default orientation behavior. No explicit `android:screenOrientation` configuration is set in the manifest, allowing automatic rotation based on device settings.
+</Note>
+
+## Common Patterns Across Activities
+
+<CardGroup cols={2}>
+  <Card title="Action Bar Setup">
+    All activities (except PantallaCarga) configure the action bar with Huelva's coat of arms icon
+  </Card>
+  
+  <Card title="RecyclerView Pattern">
+    MainActivity and Secundaria share identical RecyclerView setup code
+  </Card>
+  
+  <Card title="Error Handling">
+    Firebase operations include `onCancelled()` callbacks with Toast notifications
+  </Card>
+  
+  <Card title="Layout Reuse">
+    Secundaria reuses `activity_main.xml` layout, demonstrating efficient resource usage
+  </Card>
+</CardGroup>

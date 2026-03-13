@@ -1,0 +1,472 @@
+---
+title: Adapter (Adaptador)
+description: RecyclerView adapter implementing ViewHolder pattern with Picasso image loading and dynamic click handling
+---
+
+## Overview
+
+The `Adaptador` class is a custom RecyclerView adapter that manages the display of category and item cards throughout the app. It implements the ViewHolder pattern for efficient view recycling, uses Picasso for image loading, and handles complex conditional logic for navigation and action buttons.
+
+**File Location:** `app/src/main/java/com/example/huelvapedia/Adaptador.java`
+
+## Key Features
+
+- **ViewHolder Pattern**: Efficient view caching and recycling
+- **Picasso Integration**: Asynchronous image loading from URLs
+- **Conditional UI**: Dynamic button visibility based on item properties
+- **Navigation Handling**: Routes to Secundaria activity for subcategories
+- **Action Buttons**: Map, call, and web link functionality for leaf nodes
+- **Click Listener Support**: Custom click event handling
+
+## Class Declaration
+
+```java
+public class Adaptador extends RecyclerView.Adapter<Adaptador.MiViewHolder> 
+    implements View.OnClickListener
+```
+
+Extends `RecyclerView.Adapter` with custom ViewHolder and implements click listener interface.
+
+## Class Variables
+
+```java
+private Context context;
+private ArrayList<Elementos> elementos;
+private View.OnClickListener listener;
+```
+
+<Accordion title="Variable Details">
+- **context**: Activity context for starting intents and accessing resources
+- **elementos**: List of data items to display in RecyclerView
+- **listener**: Optional custom click listener for external handling
+</Accordion>
+
+## Constructor
+
+```java
+public Adaptador(Context context, ArrayList<Elementos> elementos)
+{
+    this.context = context;
+    this.elementos = elementos;
+}
+```
+
+Initializes adapter with context and data list. Called from MainActivity or Secundaria.
+
+## Core Adapter Methods
+
+### onCreateViewHolder()
+
+Inflates the item layout and creates a new ViewHolder instance.
+
+```java
+@NonNull
+@Override
+public MiViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType)
+{
+   View view = LayoutInflater.from(context).inflate(R.layout.principal, parent, false);
+   view.setOnClickListener(this);
+   return new MiViewHolder(view);
+}
+```
+
+**Process:**
+1. Inflates `R.layout.principal` layout
+2. Sets adapter as click listener for the view
+3. Creates and returns new `MiViewHolder` instance
+
+### onBindViewHolder()
+
+Binds data to ViewHolder views and configures click behavior based on item properties.
+
+```java
+@Override
+public void onBindViewHolder(@NonNull MiViewHolder holder, int position)
+{
+    Elementos elemento = elementos.get(position);
+
+    holder.nombre.setText(elemento.getNombre());
+    holder.descripcion.setText(elemento.getDescripcion());
+    Picasso.get().load(elemento.getFoto()).into(holder.imagen);
+
+    boolean tieneUbicacion = elemento.getUbicacion1() != null && elemento.getUbicacion2() != null;
+    boolean tieneTelefono = elemento.getTelefono() != null;
+    boolean tieneEnlace = elemento.getEnlace() != null;
+
+    if (!elemento.getUltimo()) // Not a leaf node - navigates to subcategory
+    {
+        holder.botonUbicacion.setVisibility(View.GONE);
+        holder.botonLlamar.setVisibility(View.GONE);
+        holder.botonEnlace.setVisibility(View.GONE);
+
+        if (!tieneUbicacion && !tieneTelefono && !tieneEnlace)
+        {
+            holder.itemView.setOnClickListener(v -> {
+                Intent intent = new Intent(v.getContext(), Secundaria.class);
+                intent.putExtra("Nombre", elemento.getNombre());
+                v.getContext().startActivity(intent);
+            });
+        }
+    }
+    else // Leaf node - shows action buttons
+    {
+        // Location button (map)
+        if (tieneUbicacion)
+        {
+            holder.botonUbicacion.setOnClickListener(v -> {
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setData(Uri.parse(elemento.getUbicacion1() + Uri.encode(elemento.getUbicacion2())));
+                Intent chooser = Intent.createChooser(intent, "Launch Maps");
+                v.getContext().startActivity(chooser);
+            });
+        }
+        else
+        {
+            holder.botonUbicacion.setVisibility(View.GONE);
+        }
+
+        // Phone button (call)
+        if (tieneTelefono)
+        {
+            holder.botonLlamar.setOnClickListener(v -> {
+                Intent intent = new Intent(Intent.ACTION_DIAL);
+                intent.setData(Uri.parse("tel:" + elemento.getTelefono()));
+                v.getContext().startActivity(intent);
+            });
+        }
+        else
+        {
+            holder.botonLlamar.setVisibility(View.GONE);
+        }
+
+        // Web link button
+        if (tieneEnlace)
+        {
+            holder.botonEnlace.setOnClickListener(v -> {
+                Uri link = Uri.parse(elemento.getEnlace());
+                Intent intent = new Intent(Intent.ACTION_VIEW, link);
+                v.getContext().startActivity(intent);
+            });
+        }
+        else
+        {
+            holder.botonEnlace.setVisibility(View.GONE);
+        }
+    }
+}
+```
+
+### getItemCount()
+
+```java
+@Override
+public int getItemCount()
+{
+    return elementos.size();
+}
+```
+
+Returns the total number of items in the dataset.
+
+## ViewHolder Implementation
+
+Internal static class that holds references to item views.
+
+```java
+static class MiViewHolder extends RecyclerView.ViewHolder
+{
+    TextView nombre, descripcion;
+    ImageView imagen;
+    Button botonUbicacion, botonLlamar, botonEnlace;
+
+    public MiViewHolder(@NonNull View itemView)
+    {
+        super(itemView);
+
+        nombre = itemView.findViewById(R.id.tenombre);
+        descripcion = itemView.findViewById(R.id.tedescri);
+        imagen = itemView.findViewById(R.id.imagen);
+        botonUbicacion = itemView.findViewById(R.id.botonubi);
+        botonLlamar = itemView.findViewById(R.id.botonllamar);
+        botonEnlace = itemView.findViewById(R.id.botonwiki);
+    }
+}
+```
+
+**Cached Views:**
+- `nombre` - Item title
+- `descripcion` - Item description
+- `imagen` - Item image
+- `botonUbicacion` - Map/location button
+- `botonLlamar` - Phone call button
+- `botonEnlace` - Web link button
+
+## Image Loading with Picasso
+
+```java
+Picasso.get().load(elemento.getFoto()).into(holder.imagen);
+```
+
+**Features:**
+- Asynchronous image downloading
+- Automatic caching (memory and disk)
+- Error placeholder support (not implemented)
+- Memory-efficient bitmap handling
+
+<Accordion title="Enhanced Picasso Configuration">
+```java
+// Recommended implementation with placeholders and error handling
+Picasso.get()
+    .load(elemento.getFoto())
+    .placeholder(R.drawable.placeholder_image)  // Shown while loading
+    .error(R.drawable.error_image)              // Shown on load failure
+    .fit()                                       // Scales to ImageView size
+    .centerCrop()                                // Centers and crops
+    .into(holder.imagen);
+```
+</Accordion>
+
+## Conditional Logic: Subcategories vs Leaf Nodes
+
+### Determining Item Type
+
+```java
+boolean tieneUbicacion = elemento.getUbicacion1() != null && elemento.getUbicacion2() != null;
+boolean tieneTelefono = elemento.getTelefono() != null;
+boolean tieneEnlace = elemento.getEnlace() != null;
+
+if (!elemento.getUltimo()) {
+    // Subcategory item - navigates to Secundaria
+} else {
+    // Leaf node - shows action buttons
+}
+```
+
+### Subcategory Items (`ultimo = false`)
+
+<Accordion title="Subcategory Behavior">
+```java
+if (!elemento.getUltimo())
+{
+    holder.botonUbicacion.setVisibility(View.GONE);
+    holder.botonLlamar.setVisibility(View.GONE);
+    holder.botonEnlace.setVisibility(View.GONE);
+
+    if (!tieneUbicacion && !tieneTelefono && !tieneEnlace)
+    {
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(v.getContext(), Secundaria.class);
+            intent.putExtra("Nombre", elemento.getNombre());
+            v.getContext().startActivity(intent);
+        });
+    }
+}
+```
+
+**Characteristics:**
+- All action buttons hidden
+- Entire card clickable
+- Navigates to Secundaria activity
+- Passes item name via Intent extra
+</Accordion>
+
+### Leaf Nodes (`ultimo = true`)
+
+<Accordion title="Leaf Node Behavior">
+```java
+if (tieneUbicacion)
+{
+    holder.botonUbicacion.setOnClickListener(v -> {
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(Uri.parse(elemento.getUbicacion1() + Uri.encode(elemento.getUbicacion2())));
+        Intent chooser = Intent.createChooser(intent, "Launch Maps");
+        v.getContext().startActivity(chooser);
+    });
+}
+else
+{
+    holder.botonUbicacion.setVisibility(View.GONE);
+}
+```
+
+**Characteristics:**
+- Action buttons shown conditionally
+- Each button has specific functionality
+- Card itself not clickable (only buttons)
+- Buttons hidden if corresponding data is null
+</Accordion>
+
+## Action Button Implementations
+
+### Location Button (Map)
+
+```java
+holder.botonUbicacion.setOnClickListener(v -> {
+    Intent intent = new Intent(Intent.ACTION_VIEW);
+    intent.setData(Uri.parse(elemento.getUbicacion1() + Uri.encode(elemento.getUbicacion2())));
+    Intent chooser = Intent.createChooser(intent, "Launch Maps");
+    v.getContext().startActivity(chooser);
+});
+```
+
+**Functionality:**
+- Constructs map URL from `ubicacion1` + `ubicacion2`
+- Encodes second part to handle special characters
+- Creates chooser dialog for map apps
+- Opens in Google Maps, Apple Maps, or other installed map apps
+
+**Example:**
+- `ubicacion1`: `"https://www.google.com/maps/search/?api=1&query="`
+- `ubicacion2`: `"Plaza de las Monjas, Huelva"`
+- Result: `https://www.google.com/maps/search/?api=1&query=Plaza+de+las+Monjas%2C+Huelva`
+
+### Phone Button (Call)
+
+```java
+holder.botonLlamar.setOnClickListener(v -> {
+    Intent intent = new Intent(Intent.ACTION_DIAL);
+    intent.setData(Uri.parse("tel:" + elemento.getTelefono()));
+    v.getContext().startActivity(intent);
+});
+```
+
+**Functionality:**
+- Uses `ACTION_DIAL` (opens dialer, doesn't call automatically)
+- Prefixes phone number with `tel:` scheme
+- Respects user privacy (requires explicit dial action)
+
+**Example:**
+- Phone: `"959123456"`
+- URI: `tel:959123456`
+
+<Note>
+Uses `ACTION_DIAL` instead of `ACTION_CALL` to avoid requiring `CALL_PHONE` permission and to let users confirm before calling.
+</Note>
+
+### Web Link Button
+
+```java
+holder.botonEnlace.setOnClickListener(v -> {
+    Uri link = Uri.parse(elemento.getEnlace());
+    Intent intent = new Intent(Intent.ACTION_VIEW, link);
+    v.getContext().startActivity(intent);
+});
+```
+
+**Functionality:**
+- Opens URL in default browser
+- Supports http, https, and other URI schemes
+- No chooser dialog (uses default browser directly)
+
+## Click Listener Management
+
+```java
+public void setOnClickListener(View.OnClickListener listener)
+{
+    this.listener = listener;
+}
+
+@Override
+public void onClick(View v) {
+    if (listener != null)
+    {
+        listener.onClick(v);
+    }
+}
+```
+
+Allows external click handling if needed, though current implementation handles clicks internally.
+
+## Data Flow Diagram
+
+```
+MainActivity/Secundaria
+        |
+        | Creates adapter with data
+        |
+        v
+    Adaptador
+        |
+        | onCreateViewHolder()
+        |     - Inflates layout
+        |     - Creates ViewHolder
+        |
+        v
+    MiViewHolder
+        |
+        | onBindViewHolder()
+        |     - Sets text values
+        |     - Loads image with Picasso
+        |     - Checks ultimo flag
+        |
+        v
+  Conditional Logic
+        |
+        +----> ultimo = false
+        |         - Hides all buttons
+        |         - Sets card click listener
+        |         - Navigates to Secundaria
+        |
+        +----> ultimo = true
+                  - Shows available buttons
+                  - Sets button click listeners
+                  - Opens map/call/web
+```
+
+## Dependencies
+
+```java
+import com.squareup.picasso.Picasso;
+import androidx.recyclerview.widget.RecyclerView;
+import android.content.Intent;
+import android.net.Uri;
+```
+
+**Required Libraries:**
+- **Picasso**: Image loading and caching
+- **RecyclerView**: Android list component
+- **Intent/Uri**: Navigation and external app launching
+
+## Layout Resource
+
+**Layout File:** `R.layout.principal`
+
+**Required View IDs:**
+- `R.id.tenombre` - TextView for name
+- `R.id.tedescri` - TextView for description
+- `R.id.imagen` - ImageView for photo
+- `R.id.botonubi` - Button for location
+- `R.id.botonllamar` - Button for phone
+- `R.id.botonwiki` - Button for web link
+
+## Related Components
+
+- [MainActivity](/components/main-activity) - Uses adapter for main categories
+- [Secundaria](/components/secondary-activity) - Uses adapter for subcategories
+- [Elementos](/architecture/data-model#elementos) - Data model class
+
+## Best Practices Demonstrated
+
+<Note>
+**Design Patterns:**
+
+1. **ViewHolder Pattern**: Caches view references for performance
+2. **Conditional UI**: Dynamic button visibility based on data
+3. **Intent Chooser**: Provides user choice for map applications
+4. **Safe Calling**: Uses ACTION_DIAL instead of ACTION_CALL
+5. **Image Optimization**: Async loading with Picasso
+</Note>
+
+## Potential Improvements
+
+<Warning>
+**Enhancement Opportunities:**
+
+1. **Picasso Placeholders**: Add loading and error images
+2. **Click Debouncing**: Prevent double-clicks on navigation
+3. **URL Validation**: Verify URLs before opening
+4. **Phone Formatting**: Standardize phone number display
+5. **Accessibility**: Add content descriptions for screen readers
+6. **DiffUtil**: Optimize list updates for large datasets
+7. **Error Handling**: Handle missing map/browser apps gracefully
+</Warning>

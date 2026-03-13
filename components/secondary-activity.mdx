@@ -1,0 +1,275 @@
+---
+title: Secondary Activity (Secundaria)
+description: Subcategory screen displaying child elements from Firebase based on parent category selection
+---
+
+## Overview
+
+The `Secundaria` activity displays subcategories and detailed items based on the category selected in MainActivity. It dynamically loads content from Firebase using the parent category name as a reference key, providing a hierarchical navigation structure.
+
+**File Location:** `app/src/main/java/com/example/huelvapedia/Secundaria.java`
+
+## Key Features
+
+- **Dynamic Firebase References**: Loads data from child nodes based on parent category
+- **Intent-Based Navigation**: Receives category name from previous activity
+- **String Normalization**: Converts category names to database-compatible keys
+- **Conditional UI**: Hides weather button on secondary screens
+- **Reuses MainActivity Layout**: Shares layout with MainActivity for consistency
+
+## Class Variables
+
+```java
+private DatabaseReference reference;
+private RecyclerView recyclerView;
+private ArrayList<Elementos> listaElementos;
+private Adaptador adaptador;
+private Button botonTiempo;
+```
+
+Identical structure to MainActivity, enabling code reuse and consistent behavior.
+
+## onCreate() Method
+
+Initializes the activity with dynamic Firebase reference based on parent category.
+
+```java
+@Override
+protected void onCreate(Bundle savedInstanceState)
+{
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    botonTiempo = findViewById(R.id.botontiempo);
+    botonTiempo.setVisibility(View.GONE); // Hides weather button on subcategory screens
+
+    ActionBar actionBar = getSupportActionBar();
+    actionBar.setIcon(R.mipmap.ic_escudohuelva);
+    actionBar.setDisplayShowHomeEnabled(true);
+
+    recyclerView = findViewById(R.id.recicler);
+    recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+    listaElementos = new ArrayList<>();
+
+    // Receives category name from previous activity and normalizes it
+    Intent intent = getIntent();
+    String nombreReferencia = intent.getStringExtra("Nombre")
+            .replace(" ", "")
+            .toLowerCase();
+
+    reference = FirebaseDatabase.getInstance().getReference().child(nombreReferencia);
+
+    reference.addValueEventListener(new ValueEventListener()
+    {
+        @Override
+        public void onDataChange(@NonNull DataSnapshot snapshot)
+        {
+            listaElementos.clear(); // Prevents data duplication on Firebase updates
+            for (DataSnapshot dataSnapshot : snapshot.getChildren())
+            {
+                Elementos elemento = dataSnapshot.getValue(Elementos.class);
+                listaElementos.add(elemento);
+            }
+            adaptador = new Adaptador(Secundaria.this, listaElementos);
+            recyclerView.setAdapter(adaptador);
+        }
+
+        @Override
+        public void onCancelled(@NonNull DatabaseError error)
+        {
+            Toast.makeText(Secundaria.this, "Algo ha fallado", Toast.LENGTH_SHORT).show();
+        }
+    });
+}
+```
+
+## Key Differences from MainActivity
+
+### 1. Weather Button Visibility
+
+```java
+botonTiempo = findViewById(R.id.botontiempo);
+botonTiempo.setVisibility(View.GONE); // Hidden on subcategory screens
+```
+
+The weather button is hidden in secondary views to maintain focus on subcategory content.
+
+### 2. Dynamic Firebase Reference
+
+<Accordion title="Firebase Reference Construction">
+```java
+Intent intent = getIntent();
+String nombreReferencia = intent.getStringExtra("Nombre")
+        .replace(" ", "")
+        .toLowerCase();
+
+reference = FirebaseDatabase.getInstance().getReference().child(nombreReferencia);
+```
+
+**Process:**
+1. Receives category name via Intent extra with key "Nombre"
+2. Removes all spaces: `"Arte Rupestre"` → `"ArteRupestre"`
+3. Converts to lowercase: `"ArteRupestre"` → `"arterupestre"`
+4. Uses normalized string as Firebase child reference
+
+**Example:**
+- User clicks "Historia" in MainActivity
+- Intent passes `"Historia"` as "Nombre" extra
+- Normalized to `"historia"`
+- Firebase loads data from `/historia/` node
+</Accordion>
+
+### 3. Context Reference in Adapter
+
+```java
+adaptador = new Adaptador(Secundaria.this, listaElementos);
+```
+
+Uses `Secundaria.this` instead of `MainActivity.this` for proper context handling.
+
+## Navigation Flow
+
+```mermaid
+MainActivity
+    |
+    | User clicks category
+    | (e.g., "Gastronomía")
+    |
+    v
+Intent created with:
+  - Target: Secundaria.class
+  - Extra: "Nombre" = "Gastronomía"
+    |
+    v
+Secundaria.onCreate()
+    |
+    | Normalizes: "gastronomía" → "gastronomia"
+    |
+    v
+Firebase reference: /gastronomia/
+    |
+    v
+Loads subcategories/items
+    |
+    v
+Displays in RecyclerView
+```
+
+## String Normalization Logic
+
+<Accordion title="Normalization Examples">
+```java
+String nombreReferencia = intent.getStringExtra("Nombre")
+        .replace(" ", "")
+        .toLowerCase();
+```
+
+**Transformation Examples:**
+
+| Original Name | After remove spaces | After toLowerCase | Firebase Node |
+|---------------|---------------------|-------------------|---------------|
+| "Arte Rupestre" | "ArteRupestre" | "arterupestre" | `/arterupestre/` |
+| "Gastronomía" | "Gastronomía" | "gastronomía" | `/gastronomía/` |
+| "Lugares de Interés" | "LugaresdeInterés" | "lugaresdeinterés" | `/lugaresdeinterés/` |
+| "Historia" | "Historia" | "historia" | `/historia/` |
+
+<Note>
+Accented characters (á, é, í, ó, ú, ñ) are preserved in the normalization process. Ensure Firebase node names match this convention.
+</Note>
+</Accordion>
+
+## Firebase Database Structure
+
+```
+Firebase Root
+├── principal (loaded by MainActivity)
+│   ├── historia
+│   ├── gastronomia
+│   └── arte
+├── historia (loaded by Secundaria when "Historia" clicked)
+│   ├── item1
+│   ├── item2
+│   └── item3
+├── gastronomia (loaded by Secundaria when "Gastronomía" clicked)
+│   ├── item1
+│   └── item2
+└── arte (loaded by Secundaria when "Arte" clicked)
+    └── item1
+```
+
+## Intent Communication
+
+### Sending Activity (Adaptador)
+
+```java
+Intent intent = new Intent(v.getContext(), Secundaria.class);
+intent.putExtra("Nombre", elemento.getNombre());
+v.getContext().startActivity(intent);
+```
+
+### Receiving Activity (Secundaria)
+
+```java
+Intent intent = getIntent();
+String nombreReferencia = intent.getStringExtra("Nombre")
+        .replace(" ", "")
+        .toLowerCase();
+```
+
+## Error Handling
+
+```java
+@Override
+public void onCancelled(@NonNull DatabaseError error)
+{
+    Toast.makeText(Secundaria.this, "Algo ha fallado", Toast.LENGTH_SHORT).show();
+}
+```
+
+Displays a generic error message when Firebase data loading fails.
+
+<Warning>
+**Potential Issues:**
+
+1. **Null Pointer Risk**: `getStringExtra("Nombre")` could return null if extra is missing
+2. **Case Sensitivity**: Firebase node names must exactly match normalized strings
+3. **Special Characters**: Accented characters in Spanish may cause mismatches if Firebase structure doesn't account for them
+
+**Recommendation:** Add null checking before normalization:
+```java
+String nombre = intent.getStringExtra("Nombre");
+if (nombre == null) {
+    Toast.makeText(this, "Error: No category specified", Toast.LENGTH_SHORT).show();
+    finish();
+    return;
+}
+String nombreReferencia = nombre.replace(" ", "").toLowerCase();
+```
+</Warning>
+
+## Related Components
+
+- [MainActivity](/components/main-activity) - Parent activity that navigates to Secundaria
+- [Adaptador](/components/adapter) - Handles click events that trigger navigation
+- [Elementos](/architecture/data-model#elementos) - Data model for items
+
+## UI Layout
+
+**Layout File:** `R.layout.activity_main` (shared with MainActivity)
+
+**Key Views:**
+- `R.id.recicler` - RecyclerView for subcategories
+- `R.id.botontiempo` - Weather button (hidden via `View.GONE`)
+
+## Usage Example
+
+**User Journey:**
+1. User opens app → MainActivity displays main categories
+2. User taps "Gastronomía" category
+3. Adaptador creates Intent with extra "Nombre" = "Gastronomía"
+4. Secundaria receives intent, normalizes to "gastronomía"
+5. Firebase loads data from `/gastronomía/` node
+6. RecyclerView displays restaurants, recipes, or related items
+7. If items have `ultimo = true`, action buttons appear (map, call, web)
+8. If items have `ultimo = false`, tapping navigates to another Secundaria instance

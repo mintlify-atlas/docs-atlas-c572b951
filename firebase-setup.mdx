@@ -1,0 +1,353 @@
+---
+title: Firebase Setup
+description: Configure Firebase Realtime Database and integrate it with HuelvaPedia
+---
+
+## Overview
+
+HuelvaPedia relies entirely on Firebase Realtime Database for its content. This guide will walk you through creating a Firebase project, configuring the Android app, and setting up the required database structure.
+
+<Warning>
+  The `google-services.json` configuration file is **NOT included** in the repository for security reasons. It is added to `.gitignore` to prevent accidental exposure of Firebase credentials. You must generate your own configuration file.
+</Warning>
+
+## Why Firebase Configuration is Required
+
+HuelvaPedia uses Firebase Realtime Database as its backend to:
+- Store all encyclopedia content (categories, items, descriptions, images)
+- Enable real-time data updates without app updates
+- Provide cloud-hosted images and content
+- Support dynamic content management
+
+Without proper Firebase configuration, the app will not be able to fetch any data and will not function.
+
+## Setup Steps
+
+<Steps>
+  <Step title="Create a Firebase Project">
+    Navigate to the [Firebase Console](https://console.firebase.google.com/) and create a new project:
+    
+    1. Click **Add project** or **Create a project**
+    2. Enter a project name (e.g., "HuelvaPedia")
+    3. (Optional) Enable Google Analytics if you want usage tracking
+    4. Click **Create project** and wait for provisioning to complete
+  </Step>
+  
+  <Step title="Add an Android App">
+    Once your project is created, add an Android app to it:
+    
+    1. From the project overview page, click the Android icon or **Add app > Android**
+    2. Enter the package name: **`com.example.huelvapedia`**
+    
+    <Warning>
+      The package name must be exactly `com.example.huelvapedia` to match the application ID in `app/build.gradle:11`. Using a different package name will cause authentication errors.
+    </Warning>
+    
+    3. (Optional) Enter an app nickname: "HuelvaPedia"
+    4. (Optional) Add a SHA-1 certificate fingerprint if you plan to use Firebase Authentication
+    5. Click **Register app**
+  </Step>
+  
+  <Step title="Download google-services.json">
+    After registering your app, Firebase will generate the configuration file:
+    
+    1. Click **Download google-services.json**
+    2. Place this file in the **`app/`** directory of your cloned HuelvaPedia project
+    
+    ```
+    HuelvaPedia/
+    ├── app/
+    │   ├── google-services.json  ← Place the file here
+    │   ├── build.gradle
+    │   └── src/
+    ├── build.gradle
+    └── settings.gradle
+    ```
+    
+    <Note>
+      The `google-services.json` file contains sensitive configuration data. Never commit this file to public repositories. It is already included in the project's `.gitignore` file.
+    </Note>
+  </Step>
+  
+  <Step title="Enable Realtime Database">
+    Set up Firebase Realtime Database for your project:
+    
+    1. In the Firebase Console, navigate to **Build > Realtime Database**
+    2. Click **Create Database**
+    3. Select a database location (choose the closest region to your users)
+    4. Choose **Start in test mode** for development (we'll configure security rules later)
+    5. Click **Enable**
+  </Step>
+  
+  <Step title="Configure Database Structure">
+    HuelvaPedia expects a specific database structure. The app queries two types of nodes:
+    
+    <CodeGroup>
+    ```json Main Categories (principal node)
+    {
+      "principal": {
+        "categoria1": {
+          "nombre": "Historia",
+          "foto": "https://example.com/image.jpg",
+          "descripcion": "Explora la historia de Huelva",
+          "ubicacion1": "",
+          "ubicacion2": "",
+          "telefono": "",
+          "ultimo": false,
+          "enlace": ""
+        },
+        "categoria2": {
+          "nombre": "Gastronomía",
+          "foto": "https://example.com/gastro.jpg",
+          "descripcion": "Descubre la gastronomía onubense",
+          "ubicacion1": "",
+          "ubicacion2": "",
+          "telefono": "",
+          "ultimo": false,
+          "enlace": ""
+        }
+      }
+    }
+    ```
+    
+    ```json Category Items (subcategories)
+    {
+      "historia": {
+        "item1": {
+          "nombre": "Catedral de Huelva",
+          "foto": "https://example.com/catedral.jpg",
+          "descripcion": "La Catedral de la Merced es el templo principal...",
+          "ubicacion1": "Plaza de la Merced",
+          "ubicacion2": "21001 Huelva",
+          "telefono": "+34 959 24 50 76",
+          "ultimo": true,
+          "enlace": "https://example.com/more-info"
+        }
+      },
+      "gastronomía": {
+        "item1": {
+          "nombre": "Jamón de Jabugo",
+          "foto": "https://example.com/jamon.jpg",
+          "descripcion": "El jamón ibérico de bellota de Jabugo...",
+          "ubicacion1": "",
+          "ubicacion2": "",
+          "telefono": "",
+          "ultimo": true,
+          "enlace": "https://example.com/jamon-info"
+        }
+      }
+    }
+    ```
+    </CodeGroup>
+    
+    **Database Structure Explained:**
+    
+    The app uses a two-level hierarchy:
+    
+    1. **Main Categories Node (`principal`)**: Contains top-level categories displayed on the main screen
+       - Referenced in `MainActivity.java:48`: `FirebaseDatabase.getInstance().getReference().child("principal")`
+    
+    2. **Category-Specific Nodes**: Named using lowercase category names with spaces removed
+       - Referenced in `Secundaria.java:51-53`: Category names are normalized (spaces removed, converted to lowercase)
+       - Example: "Lugares de Interés" becomes `lugaresdeinterés`
+  </Step>
+  
+  <Step title="Set Up Security Rules">
+    Configure database security rules to protect your data:
+    
+    In the Firebase Console, go to **Realtime Database > Rules** and configure appropriate access control.
+    
+    <CodeGroup>
+    ```json Development (Read-Only)
+    {
+      "rules": {
+        ".read": true,
+        ".write": false
+      }
+    }
+    ```
+    
+    ```json Production (Authenticated)
+    {
+      "rules": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    }
+    ```
+    </CodeGroup>
+    
+    <Warning>
+      **Security Best Practices:**
+      - Never leave your database in test mode for production apps
+      - Use authentication rules to prevent unauthorized access
+      - For a public informational app, use read-only rules with write access restricted to admin users
+      - Monitor database usage and set up billing alerts
+    </Warning>
+  </Step>
+  
+  <Step title="Verify Configuration">
+    After completing the setup:
+    
+    1. Return to Android Studio
+    2. Sync your Gradle files: **File > Sync Project with Gradle Files**
+    3. Build the project: **Build > Rebuild Project**
+    4. Run the app on a device or emulator
+    5. Check Android Studio's Logcat for any Firebase connection errors
+  </Step>
+</Steps>
+
+## Database Schema Reference
+
+### Elementos Data Model
+
+The app uses the `Elementos` class (defined in `Elementos.java:3`) to map Firebase data. Each item in the database must include these fields:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `nombre` | String | Yes | Name or title of the item |
+| `foto` | String | Yes | URL to the item's image (must be publicly accessible) |
+| `descripcion` | String | Yes | Detailed description of the item |
+| `ubicacion1` | String | No | Primary location information (e.g., street address) |
+| `ubicacion2` | String | No | Secondary location information (e.g., postal code, city) |
+| `telefono` | String | No | Contact phone number |
+| `ultimo` | Boolean | Yes | Flag indicating if this is a leaf node (true) or has subcategories (false) |
+| `enlace` | String | No | External link for more information |
+
+<Note>
+  All fields are defined in `Elementos.java:4-11`. The class uses standard JavaBean getters and setters for Firebase serialization.
+</Note>
+
+## How the App Queries Firebase
+
+### Main Screen Query
+
+The main screen (`MainActivity.java`) queries the `principal` node:
+
+```java MainActivity.java
+reference = FirebaseDatabase.getInstance().getReference().child("principal");
+```
+
+This retrieves all top-level categories to display in the main menu.
+
+### Category Detail Query
+
+When a user selects a category, `Secundaria.java` normalizes the category name and queries the corresponding node:
+
+```java Secundaria.java
+String nombreReferencia = intent.getStringExtra("Nombre")
+        .replace(" ", "")
+        .toLowerCase();
+        
+reference = FirebaseDatabase.getInstance().getReference().child(nombreReferencia);
+```
+
+**Example:** If the user taps "Lugares de Interés", the app queries the `lugaresdeinterés` node.
+
+## Image Hosting
+
+The app uses Picasso (`build.gradle:37`) to load images from URLs stored in the `foto` field. You can host images:
+
+- In Firebase Storage (recommended)
+- On a CDN or external image hosting service
+- Ensure all image URLs are publicly accessible and use HTTPS
+
+## Testing Your Configuration
+
+<Steps>
+  <Step title="Add Sample Data">
+    In the Firebase Console, manually add a test category to the `principal` node:
+    
+    ```json
+    {
+      "principal": {
+        "test": {
+          "nombre": "Test Category",
+          "foto": "https://via.placeholder.com/150",
+          "descripcion": "This is a test category",
+          "ubicacion1": "",
+          "ubicacion2": "",
+          "telefono": "",
+          "ultimo": true,
+          "enlace": ""
+        }
+      }
+    }
+    ```
+  </Step>
+  
+  <Step title="Run the App">
+    Launch the app on your device or emulator. You should see "Test Category" appear in the main screen.
+  </Step>
+  
+  <Step title="Check Logcat">
+    If the category doesn't appear, check Android Studio's Logcat for Firebase errors:
+    - Database connection issues
+    - Permission denied errors
+    - Authentication failures
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### App Crashes on Launch
+
+**Symptom:** App crashes immediately when opened
+
+**Solution:**
+- Verify `google-services.json` is in the `app/` directory
+- Ensure the package name in Firebase matches `com.example.huelvapedia`
+- Check that you've added the Google Services plugin in `build.gradle:3`
+
+### No Data Appears
+
+**Symptom:** App runs but shows no content
+
+**Solution:**
+- Check Firebase Console to verify data exists in the `principal` node
+- Review database security rules (ensure `.read` is allowed)
+- Check device internet connection
+- Look for "Algo ha fallado" (Something failed) Toast messages indicating query errors
+
+### Images Not Loading
+
+**Symptom:** Text appears but images don't load
+
+**Solution:**
+- Verify image URLs are valid and publicly accessible
+- Ensure URLs use HTTPS (HTTP may be blocked by network security config)
+- Check that Picasso dependency is properly included (`build.gradle:37`)
+
+## Security Considerations
+
+<Warning>
+  **Important Security Notes:**
+  
+  - The `google-services.json` file contains API keys and project identifiers. Never commit it to public repositories.
+  - Firebase API keys in `google-services.json` are safe to include in Android apps—they identify your Firebase project but don't grant access without proper security rules.
+  - Always configure database security rules to prevent unauthorized writes.
+  - For production apps, implement Firebase Authentication and restrict database access to authenticated users.
+  - Monitor your Firebase usage and set up billing alerts to prevent unexpected charges.
+</Warning>
+
+## Scalability & Data Management
+
+As noted in the project README, HuelvaPedia is designed to be easily extensible. You can:
+
+- Add new categories by creating new nodes in the database
+- Update content in real-time without requiring app updates
+- Manage all encyclopedic content through the Firebase Console
+- Use Firebase Cloud Functions to automate content updates
+
+<Note>
+  The app queries the database on-demand rather than caching data locally, ensuring users always see the most current information.
+</Note>
+
+## Next Steps
+
+Once Firebase is configured, you're ready to start using HuelvaPedia! Consider:
+
+- Adding comprehensive content for Huelva's history, gastronomy, and points of interest
+- Setting up Firebase Storage for hosting images
+- Implementing Firebase Analytics to track user engagement
+- Configuring Firebase Authentication for admin access

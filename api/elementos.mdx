@@ -1,0 +1,305 @@
+---
+title: "Elementos"
+description: "Data model class for storing topic elements in HuelvaPedia"
+---
+
+## Overview
+
+`Elementos` is a Plain Old Java Object (POJO) class designed to store the elements that compose each topic in the HuelvaPedia application. It contains properties for name, photo, description, location, phone, and web link information.
+
+## Class Signature
+
+```java
+public class Elementos
+```
+
+**Package:** `com.example.huelvapedia`
+
+## Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `nombre` | `String` | Name of the element |
+| `foto` | `String` | URL or path to the photo |
+| `descripcion` | `String` | Description text |
+| `ubicacion1` | `String` | First part of location (base URL) |
+| `ubicacion2` | `String` | Second part of location (address to encode) |
+| `telefono` | `String` | Phone number |
+| `ultimo` | `Boolean` | Flag indicating if this is the last element (affects UI behavior) |
+| `enlace` | `String` | Web link URL |
+
+## Constructors
+
+<Accordion title="Empty Constructor">
+  ```java
+  public Elementos()
+  ```
+  
+  Default constructor with no parameters. Creates an empty `Elementos` object.
+  
+  **Location:** `Elementos.java:13`
+</Accordion>
+
+<Accordion title="Parameterized Constructor">
+  ```java
+  public Elementos(String nombre, String foto, String descripcion, 
+                   String ubicacion1, String ubicacion2, String telefono, 
+                   Boolean ultimo, String enlace)
+  ```
+  
+  Constructor that initializes all fields of the `Elementos` object.
+  
+  <ParamField path="nombre" type="String">
+    Name of the element
+  </ParamField>
+  
+  <ParamField path="foto" type="String">
+    Photo URL or path
+  </ParamField>
+  
+  <ParamField path="descripcion" type="String">
+    Description text
+  </ParamField>
+  
+  <ParamField path="ubicacion1" type="String">
+    First part of location URL
+  </ParamField>
+  
+  <ParamField path="ubicacion2" type="String">
+    Second part of location (address)
+  </ParamField>
+  
+  <ParamField path="telefono" type="String">
+    Phone number
+  </ParamField>
+  
+  <ParamField path="ultimo" type="Boolean">
+    Whether this is the last element in a list
+  </ParamField>
+  
+  <ParamField path="enlace" type="String">
+    Web link URL
+  </ParamField>
+  
+  **Location:** `Elementos.java:16`
+</Accordion>
+
+## Methods
+
+### Getters
+
+<Accordion title="getNombre()">
+  ```java
+  public String getNombre()
+  ```
+  
+  Returns the name of the element.
+  
+  **Returns:** `String` - The element's name
+  
+  **Location:** `Elementos.java:29`
+</Accordion>
+
+<Accordion title="getFoto()">
+  ```java
+  public String getFoto()
+  ```
+  
+  Returns the photo URL or path.
+  
+  **Returns:** `String` - The photo URL/path
+  
+  **Location:** `Elementos.java:37`
+</Accordion>
+
+<Accordion title="getDescripcion()">
+  ```java
+  public String getDescripcion()
+  ```
+  
+  Returns the description text.
+  
+  **Returns:** `String` - The description
+  
+  **Location:** `Elementos.java:45`
+</Accordion>
+
+<Accordion title="getUbicacion1()">
+  ```java
+  public String getUbicacion1()
+  ```
+  
+  Returns the first part of the location URL.
+  
+  **Returns:** `String` - The location base URL
+  
+  **Location:** `Elementos.java:53`
+</Accordion>
+
+<Accordion title="getUbicacion2()">
+  ```java
+  public String getUbicacion2()
+  ```
+  
+  Returns the second part of the location (address to be encoded).
+  
+  **Returns:** `String` - The location address
+  
+  **Location:** `Elementos.java:61`
+</Accordion>
+
+<Accordion title="getTelefono()">
+  ```java
+  public String getTelefono()
+  ```
+  
+  Returns the phone number.
+  
+  **Returns:** `String` - The phone number
+  
+  **Location:** `Elementos.java:69`
+</Accordion>
+
+<Accordion title="getUltimo()">
+  ```java
+  public Boolean getUltimo()
+  ```
+  
+  Returns whether this is the last element.
+  
+  **Returns:** `Boolean` - True if this is the last element, false otherwise
+  
+  **Location:** `Elementos.java:77`
+</Accordion>
+
+<Accordion title="getEnlace()">
+  ```java
+  public String getEnlace()
+  ```
+  
+  Returns the web link URL.
+  
+  **Returns:** `String` - The web link URL
+  
+  **Location:** `Elementos.java:83`
+</Accordion>
+
+### Setters
+
+<Accordion title="setNombre(String nombre)">
+  ```java
+  public void setNombre(String nombre)
+  ```
+  
+  Sets the name of the element.
+  
+  <ParamField path="nombre" type="String">
+    The name to set
+  </ParamField>
+  
+  **Location:** `Elementos.java:33`
+</Accordion>
+
+<Accordion title="setFoto(String foto)">
+  ```java
+  public void setFoto(String foto)
+  ```
+  
+  Sets the photo URL or path.
+  
+  <ParamField path="foto" type="String">
+    The photo URL/path to set
+  </ParamField>
+  
+  **Location:** `Elementos.java:41`
+</Accordion>
+
+<Accordion title="setDescripcion(String descripcion)">
+  ```java
+  public void setDescripcion(String descripcion)
+  ```
+  
+  Sets the description text.
+  
+  <ParamField path="descripcion" type="String">
+    The description to set
+  </ParamField>
+  
+  **Location:** `Elementos.java:49`
+</Accordion>
+
+<Accordion title="setUbicacion1(String ubicacion1)">
+  ```java
+  public void setUbicacion1(String ubicacion1)
+  ```
+  
+  Sets the first part of the location URL.
+  
+  <ParamField path="ubicacion1" type="String">
+    The location base URL to set
+  </ParamField>
+  
+  **Location:** `Elementos.java:57`
+</Accordion>
+
+<Accordion title="setUbicacion2(String ubicacion2)">
+  ```java
+  public void setUbicacion2(String ubicacion2)
+  ```
+  
+  Sets the second part of the location.
+  
+  <ParamField path="ubicacion2" type="String">
+    The location address to set
+  </ParamField>
+  
+  **Location:** `Elementos.java:65`
+</Accordion>
+
+<Accordion title="setTelefono(String telefono)">
+  ```java
+  public void setTelefono(String telefono)
+  ```
+  
+  Sets the phone number.
+  
+  <ParamField path="telefono" type="String">
+    The phone number to set
+  </ParamField>
+  
+  **Location:** `Elementos.java:73`
+</Accordion>
+
+<Accordion title="setUltimo(Boolean ultimo)">
+  ```java
+  public void setUltimo(Boolean ultimo)
+  ```
+  
+  Sets whether this is the last element.
+  
+  <ParamField path="ultimo" type="Boolean">
+    True if this is the last element, false otherwise
+  </ParamField>
+  
+  **Location:** `Elementos.java:79`
+</Accordion>
+
+<Accordion title="setEnlace(String enlace)">
+  ```java
+  public void setEnlace(String enlace)
+  ```
+  
+  Sets the web link URL.
+  
+  <ParamField path="enlace" type="String">
+    The web link URL to set
+  </ParamField>
+  
+  **Location:** `Elementos.java:87`
+</Accordion>
+
+## Usage Notes
+
+The `ultimo` field plays a special role in the UI:
+- When `false`: The item navigates to the Secundaria activity when clicked
+- When `true`: The item displays action buttons (location, phone, web link) based on available data

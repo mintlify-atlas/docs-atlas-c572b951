@@ -1,0 +1,226 @@
+---
+title: Splash Screen (PantallaCarga)
+description: Launch screen with connectivity check, animations, and navigation to the main activity
+---
+
+## Overview
+
+The `PantallaCarga` (Splash Screen) activity serves as the app's entry point, providing a branded loading experience while verifying internet connectivity. It displays animated logo and text elements, checks for network availability, and automatically navigates to the main activity once connectivity is confirmed.
+
+**File Location:** `app/src/main/java/com/example/huelvapedia/PantallaCarga.java`
+
+## Key Features
+
+- **Connectivity Monitoring**: Real-time network status verification
+- **Smooth Animations**: Top and bottom entrance animations for UI elements
+- **Automatic Navigation**: 5-second delay before transitioning to MainActivity
+- **Network Callbacks**: Registers listeners to wait for connectivity if unavailable
+- **Fullscreen Display**: Immersive splash screen experience
+
+## Constants
+
+```java
+private static final int DURACION_CARGA = 5000; // 5 seconds loading duration
+```
+
+## Class Variables
+
+<Accordion title="UI Components">
+```java
+private Animation animacionSuperior, animacionInferior;
+private ImageView imagenLogo;
+private TextView textoCarga, sloganCarga;
+private ProgressBar progressBar;
+```
+
+- **animacionSuperior**: Top animation for logo
+- **animacionInferior**: Bottom animation for text and progress bar
+- **imagenLogo**: App logo image view
+- **textoCarga**: Loading text display
+- **sloganCarga**: App slogan text
+- **progressBar**: Loading progress indicator
+</Accordion>
+
+<Accordion title="Network Management">
+```java
+private boolean hayConexion = true;
+private boolean monitorizando = false;
+private final Handler handler = new Handler(Looper.getMainLooper());
+```
+
+- **hayConexion**: Tracks current connectivity state
+- **monitorizando**: Indicates if network callback is registered
+- **handler**: Main thread handler for delayed navigation
+</Accordion>
+
+## Core Methods
+
+### onCreate()
+
+Initializes the splash screen, loads animations, and checks connectivity.
+
+```java
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, 
+                        WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    setContentView(R.layout.activity_pantalla_carga);
+    getSupportActionBar().hide();
+
+    animacionSuperior = AnimationUtils.loadAnimation(this, R.anim.top_animation);
+    animacionInferior = AnimationUtils.loadAnimation(this, R.anim.bottom_animation);
+
+    imagenLogo = findViewById(R.id.imagenlogo);
+    textoCarga = findViewById(R.id.textocarga);
+    sloganCarga = findViewById(R.id.slogancarga);
+    progressBar = findViewById(R.id.progressBar);
+
+    progressBar.getIndeterminateDrawable().setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+
+    imagenLogo.setAnimation(animacionSuperior);
+    textoCarga.setAnimation(animacionInferior);
+    sloganCarga.setAnimation(animacionInferior);
+    progressBar.setAnimation(animacionInferior);
+
+    checkConnectivity();
+}
+```
+
+**Implementation Details:**
+- Sets fullscreen mode and hides action bar
+- Loads animation resources from XML
+- Applies white color filter to progress bar
+- Assigns animations to UI components
+- Initiates connectivity check
+
+### checkConnectivity()
+
+Verifies internet connection and handles navigation or callback registration.
+
+<Accordion title="checkConnectivity() Implementation">
+```java
+private void checkConnectivity()
+{
+    final ConnectivityManager connectivityManager = 
+        (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+    final NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+
+    hayConexion = activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
+
+    if (hayConexion)
+    {
+        handler.postDelayed(navegarAPrincipal, DURACION_CARGA);
+    }
+    else
+    {
+        Toast.makeText(PantallaCarga.this, 
+            "SE DEBE DISPONER DE CONEXIÓN A INTERNET", 
+            Toast.LENGTH_LONG).show();
+        connectivityManager.registerNetworkCallback(
+            new NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build(), 
+            connectivityCallback);
+        monitorizando = true;
+    }
+}
+```
+
+**Behavior:**
+1. Retrieves active network information
+2. If connected: schedules navigation after 5 seconds
+3. If disconnected: displays toast message and registers network callback
+4. Sets monitoring flag when callback is active
+</Accordion>
+
+## Network Callback
+
+Handles network availability changes using `ConnectivityManager.NetworkCallback`.
+
+```java
+private final ConnectivityManager.NetworkCallback connectivityCallback = 
+    new ConnectivityManager.NetworkCallback()
+{
+    @Override
+    public void onAvailable(Network network)
+    {
+        hayConexion = true;
+        handler.postDelayed(navegarAPrincipal, DURACION_CARGA);
+    }
+
+    @Override
+    public void onLost(Network network)
+    {
+        hayConexion = false;
+        Toast.makeText(PantallaCarga.this, 
+            "SE DEBE DISPONER DE CONEXIÓN A INTERNET", 
+            Toast.LENGTH_LONG).show();
+    }
+};
+```
+
+### Navigation Runnable
+
+```java
+private final Runnable navegarAPrincipal = () -> {
+    Intent intent = new Intent(PantallaCarga.this, MainActivity.class);
+    startActivity(intent);
+    finish();
+};
+```
+
+Transitions to MainActivity and finishes the splash screen activity.
+
+## Lifecycle Management
+
+<Accordion title="onPause()">
+```java
+@Override
+protected void onPause() {
+    if (monitorizando) {
+        final ConnectivityManager connectivityManager
+            = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        connectivityManager.unregisterNetworkCallback(connectivityCallback);
+        monitorizando = false;
+    }
+    super.onPause();
+}
+```
+
+Unregisters network callback when activity is paused to prevent memory leaks.
+</Accordion>
+
+<Accordion title="onDestroy()">
+```java
+@Override
+protected void onDestroy() {
+    handler.removeCallbacksAndMessages(null); // Cancels pending callbacks
+    super.onDestroy();
+}
+```
+
+Removes all pending handler callbacks to prevent memory leaks.
+</Accordion>
+
+## Usage Flow
+
+1. **App Launch** → PantallaCarga is displayed with fullscreen animation
+2. **Connectivity Check** → Verifies internet connection
+3. **Connected** → Waits 5 seconds, then navigates to MainActivity
+4. **Disconnected** → Shows toast, registers network callback, waits for connection
+5. **Connection Restored** → Waits 5 seconds, then navigates to MainActivity
+
+<Note>
+The activity properly manages resources by unregistering callbacks in `onPause()` and removing handler messages in `onDestroy()` to prevent memory leaks.
+</Note>
+
+<Warning>
+The app requires an active internet connection to proceed past the splash screen, as it depends on Firebase for all content.
+</Warning>
+
+## Related Components
+
+- [MainActivity](/components/main-activity) - Target destination after connectivity verification
+- Layout: `R.layout.activity_pantalla_carga`
+- Animations: `R.anim.top_animation`, `R.anim.bottom_animation`

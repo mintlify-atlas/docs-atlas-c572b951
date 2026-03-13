@@ -1,0 +1,138 @@
+---
+title: 'Firebase Realtime Database'
+description: 'Integration with Firebase Realtime Database for dynamic content management'
+---
+
+## Overview
+
+HuelvaPedia uses Firebase Realtime Database to store and retrieve all application content dynamically. This integration enables real-time data synchronization and allows content updates without requiring app redeployment.
+
+## Dependency
+
+Add the Firebase Realtime Database dependency to your `app/build.gradle`:
+
+```gradle app/build.gradle
+implementation 'com.google.firebase:firebase-database:19.7.0'
+```
+
+Also include the Google Services plugin at the top of your build.gradle:
+
+```gradle app/build.gradle
+plugins {
+    id 'com.android.application'
+    id 'com.google.gms.google-services'
+}
+```
+
+## Database Structure
+
+The Firebase Realtime Database uses a hierarchical structure:
+
+- **principal** - Root node containing main categories
+- **Category nodes** - Named nodes (e.g., "gastronomia", "monumentos") containing subcategory items
+
+Each element in the database follows the `Elementos` model structure with fields like name, description, photo URL, location, phone, and link.
+
+## DatabaseReference Usage
+
+### Initializing Firebase Reference
+
+Create a reference to your database node:
+
+<CodeGroup>
+
+```java MainActivity.java
+private DatabaseReference reference;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+    
+    // Reference to the "principal" node
+    reference = FirebaseDatabase.getInstance().getReference().child("principal");
+}
+```
+
+```java Secundaria.java
+private DatabaseReference reference;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+    
+    // Get category name from Intent and normalize it
+    Intent intent = getIntent();
+    String nombreReferencia = intent.getStringExtra("Nombre")
+            .replace(" ", "")
+            .toLowerCase();
+    
+    // Reference to the specific category node
+    reference = FirebaseDatabase.getInstance().getReference().child(nombreReferencia);
+}
+```
+
+</CodeGroup>
+
+## ValueEventListener Pattern
+
+Use `ValueEventListener` to listen for real-time data changes:
+
+```java MainActivity.java
+reference.addValueEventListener(new ValueEventListener()
+{
+    @Override
+    public void onDataChange(@NonNull DataSnapshot snapshot)
+    {
+        listaElementos.clear(); // Prevent duplication when Firebase notifies changes
+        for (DataSnapshot dataSnapshot : snapshot.getChildren())
+        {
+            Elementos elemento = dataSnapshot.getValue(Elementos.class);
+            listaElementos.add(elemento);
+        }
+        adaptador = new Adaptador(MainActivity.this, listaElementos);
+        recyclerView.setAdapter(adaptador);
+    }
+
+    @Override
+    public void onCancelled(@NonNull DatabaseError error)
+    {
+        Toast.makeText(MainActivity.this, "Algo ha fallado", Toast.LENGTH_SHORT).show();
+    }
+});
+```
+
+### Key Implementation Details
+
+1. **onDataChange()** - Called when data is retrieved or changed
+   - Clear the list to avoid duplicates
+   - Iterate through DataSnapshot children
+   - Parse each snapshot into an `Elementos` object
+   - Update the RecyclerView adapter
+
+2. **onCancelled()** - Called when an error occurs
+   - Display error message to user
+   - Handle database permission issues or network errors
+
+## Real-time Updates
+
+The `addValueEventListener()` method ensures that:
+- Initial data is loaded when the activity starts
+- Any database changes are automatically reflected in the UI
+- No manual refresh is required by the user
+
+## Best Practices
+
+<Warning>
+  Always clear your data list in `onDataChange()` before adding new items to prevent duplicate entries when Firebase triggers updates.
+</Warning>
+
+<Tip>
+  Normalize category names (remove spaces, convert to lowercase) when creating dynamic references to ensure consistent database paths.
+</Tip>
+
+## Implementation Files
+
+- MainActivity.java:48 - Main category Firebase setup
+- Secundaria.java:55 - Subcategory Firebase setup

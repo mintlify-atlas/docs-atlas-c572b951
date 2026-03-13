@@ -1,0 +1,387 @@
+---
+title: Data Model
+description: Complete documentation of the Elementos class and Firebase data structure
+---
+
+## Overview
+
+The `Elementos` class is the core data model in HuelvaPedia, representing individual topics and subtopics. It's designed to work seamlessly with Firebase Realtime Database's automatic object mapping.
+
+**File:** `Elementos.java:1`
+
+---
+
+## Class Definition
+
+Here's the complete `Elementos` class from the source code:
+
+```java
+package com.example.huelvapedia;
+
+public class Elementos {
+    private String nombre;
+    private String foto;
+    private String descripcion;
+    private String ubicacion1;
+    private String ubicacion2;
+    private String telefono;
+    private Boolean ultimo;
+    private String enlace;
+
+    public Elementos() {
+        // Empty constructor required for Firebase
+    }
+
+    public Elementos(String nombre, String foto, String descripcion, 
+                     String ubicacion1, String ubicacion2, String telefono, 
+                     Boolean ultimo, String enlace) {
+        this.nombre = nombre;
+        this.foto = foto;
+        this.descripcion = descripcion;
+        this.ubicacion1 = ubicacion1;
+        this.ubicacion2 = ubicacion2;
+        this.telefono = telefono;
+        this.ultimo = ultimo;
+        this.enlace = enlace;
+    }
+
+    // Getters and setters...
+}
+```
+
+<Info>
+The empty constructor at `Elementos.java:13` is **required** by Firebase for automatic deserialization of database objects.
+</Info>
+
+---
+
+## Field Descriptions
+
+### nombre (String)
+
+**Purpose:** The display name of the topic or subtopic
+
+**Usage:** 
+- Displayed as the title in RecyclerView items
+- Used for navigation to subtopic screens (passed via Intent to `Secundaria`)
+
+**Example:** "Playas", "Gastronomía", "Lugares de Interés"
+
+### foto (String)
+
+**Purpose:** URL to the item's image hosted on Firebase Storage or external source
+
+**Usage:**
+- Loaded into ImageView using Picasso library
+- See `Adaptador.java:48`: `Picasso.get().load(elemento.getFoto()).into(holder.imagen)`
+
+**Example:** `"https://firebasestorage.googleapis.com/..."`
+
+### descripcion (String)
+
+**Purpose:** Brief description or summary of the topic
+
+**Usage:**
+- Displayed below the name in RecyclerView items
+- Provides context about what the user will find
+
+**Example:** "Descubre las mejores playas de Huelva"
+
+### ubicacion1 (String)
+
+**Purpose:** First part of the Google Maps URL (base URL)
+
+**Usage:**
+- Combined with `ubicacion2` to create a complete Maps URL
+- See `Adaptador.java:76`: `Uri.parse(elemento.getUbicacion1() + Uri.encode(elemento.getUbicacion2()))`
+
+**Example:** `"https://www.google.com/maps/search/?api=1&query="`
+
+**Note:** Can be `null` if the item doesn't have a physical location
+
+### ubicacion2 (String)
+
+**Purpose:** Second part of the location URL (coordinates or place name)
+
+**Usage:**
+- URL-encoded and appended to `ubicacion1`
+- Opens location in user's preferred maps application
+
+**Example:** `"37.2576,-6.9501"` or `"Plaza de las Monjas, Huelva"`
+
+**Note:** Can be `null` if the item doesn't have a physical location
+
+### telefono (String)
+
+**Purpose:** Phone number for calling the establishment
+
+**Usage:**
+- Opens dialer with pre-filled number
+- See `Adaptador.java:91`: `Uri.parse("tel:" + elemento.getTelefono())`
+
+**Example:** `"959123456"`
+
+**Note:** Can be `null` if the item doesn't have a contact number
+
+### ultimo (Boolean)
+
+**Purpose:** Flag indicating if this is a leaf node (final detail) or has subtopics
+
+**Usage:**
+- **`false`**: Item has subtopics, clicking navigates to `Secundaria` activity
+- **`true`**: Item is final detail, only action buttons (map, call, web) are available
+
+**Logic in Adaptador:**
+
+```java
+if (!elemento.getUltimo()) {
+    // Hide action buttons
+    holder.botonUbicacion.setVisibility(View.GONE);
+    holder.botonLlamar.setVisibility(View.GONE);
+    holder.botonEnlace.setVisibility(View.GONE);
+
+    // Enable navigation to subtopics
+    holder.itemView.setOnClickListener(v -> {
+        Intent intent = new Intent(v.getContext(), Secundaria.class);
+        intent.putExtra("Nombre", elemento.getNombre());
+        v.getContext().startActivity(intent);
+    });
+} else {
+    // Show action buttons based on available data
+    // (location, phone, link)
+}
+```
+
+**See:** `Adaptador.java:54-113`
+
+### enlace (String)
+
+**Purpose:** External website URL for more information
+
+**Usage:**
+- Opens in browser or user's preferred web handler
+- See `Adaptador.java:104-106`: `Intent.ACTION_VIEW` with the link URI
+
+**Example:** `"https://es.wikipedia.org/wiki/Huelva"`
+
+**Note:** Can be `null` if no external link is available
+
+---
+
+## Getters and Setters
+
+The class provides standard getter and setter methods for all fields:
+
+### Getter Methods
+
+```java
+public String getNombre() { return nombre; }
+public String getFoto() { return foto; }
+public String getDescripcion() { return descripcion; }
+public String getUbicacion1() { return ubicacion1; }
+public String getUbicacion2() { return ubicacion2; }
+public String getTelefono() { return telefono; }
+public Boolean getUltimo() { return ultimo; }
+public String getEnlace() { return enlace; }
+```
+
+### Setter Methods
+
+```java
+public void setNombre(String nombre) { this.nombre = nombre; }
+public void setFoto(String foto) { this.foto = foto; }
+public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+public void setUbicacion1(String ubicacion1) { this.ubicacion1 = ubicacion1; }
+public void setUbicacion2(String ubicacion2) { this.ubicacion2 = ubicacion2; }
+public void setTelefono(String telefono) { this.telefono = telefono; }
+public void setUltimo(Boolean ultimo) { this.ultimo = ultimo; }
+public void setEnlace(String enlace) { this.enlace = enlace; }
+```
+
+**Complete implementation:** `Elementos.java:29-89`
+
+---
+
+## Firebase Data Mapping
+
+### Automatic Deserialization
+
+Firebase automatically maps JSON objects to `Elementos` instances:
+
+```java
+for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
+    Elementos elemento = dataSnapshot.getValue(Elementos.class);
+    listaElementos.add(elemento);
+}
+```
+
+**See:** `MainActivity.java:56-60`
+
+### Firebase JSON Structure
+
+Example of how data is structured in Firebase Realtime Database:
+
+```json
+{
+  "principal": {
+    "item1": {
+      "nombre": "Playas",
+      "foto": "https://example.com/playas.jpg",
+      "descripcion": "Las mejores playas de Huelva",
+      "ubicacion1": null,
+      "ubicacion2": null,
+      "telefono": null,
+      "ultimo": false,
+      "enlace": null
+    },
+    "item2": {
+      "nombre": "Gastronomía",
+      "foto": "https://example.com/gastro.jpg",
+      "descripcion": "Descubre la cocina onubense",
+      "ubicacion1": null,
+      "ubicacion2": null,
+      "telefono": null,
+      "ultimo": false,
+      "enlace": null
+    }
+  },
+  "playas": {
+    "playa1": {
+      "nombre": "Playa de Punta Umbría",
+      "foto": "https://example.com/punta.jpg",
+      "descripcion": "Hermosa playa con servicios completos",
+      "ubicacion1": "https://www.google.com/maps/search/?api=1&query=",
+      "ubicacion2": "37.1833,-6.9667",
+      "telefono": "959123456",
+      "ultimo": true,
+      "enlace": "https://www.puntaumbria.es/"
+    }
+  }
+}
+```
+
+### Database Reference Structure
+
+<Steps>
+  <Step title="Main Topics">
+    `FirebaseDatabase.getInstance().getReference().child("principal")`
+    
+    Loads top-level categories displayed in MainActivity
+  </Step>
+  
+  <Step title="Subtopics">
+    `FirebaseDatabase.getInstance().getReference().child(nombreReferencia)`
+    
+    Where `nombreReferencia` is the topic name normalized (lowercase, no spaces)
+  </Step>
+</Steps>
+
+**See:** `Secundaria.java:50-55` for name normalization logic
+
+---
+
+## Data Validation
+
+### Null Checks in Adapter
+
+The `Adaptador` class performs null checks before displaying action buttons:
+
+```java
+boolean tieneUbicacion = elemento.getUbicacion1() != null && 
+                          elemento.getUbicacion2() != null;
+boolean tieneTelefono = elemento.getTelefono() != null;
+boolean tieneEnlace = elemento.getEnlace() != null;
+
+if (tieneUbicacion) {
+    holder.botonUbicacion.setOnClickListener(/* ... */);
+} else {
+    holder.botonUbicacion.setVisibility(View.GONE);
+}
+```
+
+**See:** `Adaptador.java:50-112`
+
+<Warning>
+Always check for `null` values before using optional fields (`ubicacion1`, `ubicacion2`, `telefono`, `enlace`). These fields may not be present in the Firebase data.
+</Warning>
+
+---
+
+## Usage Examples
+
+### Creating an Instance
+
+```java
+Elementos elemento = new Elementos(
+    "Catedral de Huelva",
+    "https://example.com/catedral.jpg",
+    "Catedral de Nuestra Señora de la Merced",
+    "https://www.google.com/maps/search/?api=1&query=",
+    "Plaza de la Merced, Huelva",
+    "959246462",
+    true,
+    "https://www.diocesisdehuelva.es/"
+);
+```
+
+### Accessing Data
+
+```java
+String nombre = elemento.getNombre();
+Boolean esUltimo = elemento.getUltimo();
+
+if (elemento.getTelefono() != null) {
+    // Show call button
+}
+```
+
+### Modifying Data
+
+```java
+elemento.setNombre("Nuevo Nombre");
+elemento.setDescripcion("Nueva descripción");
+elemento.setUltimo(true);
+```
+
+---
+
+## Field Summary Table
+
+| Field | Type | Required | Purpose |
+|-------|------|----------|----------|
+| `nombre` | String | Yes | Display name |
+| `foto` | String | Yes | Image URL |
+| `descripcion` | String | Yes | Brief description |
+| `ubicacion1` | String | No | Maps base URL |
+| `ubicacion2` | String | No | Location coordinates/name |
+| `telefono` | String | No | Contact phone number |
+| `ultimo` | Boolean | Yes | Leaf node indicator |
+| `enlace` | String | No | External website URL |
+
+---
+
+## Related Classes
+
+<CardGroup cols={2}>
+  <Card title="Adaptador" icon="layer-group">
+    Uses `Elementos` to bind data to RecyclerView items
+    
+    **File:** `Adaptador.java:1`
+  </Card>
+  
+  <Card title="MainActivity" icon="home">
+    Loads `Elementos` from Firebase "principal" node
+    
+    **File:** `MainActivity.java:1`
+  </Card>
+  
+  <Card title="Secundaria" icon="list">
+    Loads `Elementos` from dynamic Firebase nodes
+    
+    **File:** `Secundaria.java:1`
+  </Card>
+</CardGroup>
+
+<Info>
+The `Elementos` class is designed as a simple POJO (Plain Old Java Object) with no business logic, following the separation of concerns principle.
+</Info>

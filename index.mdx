@@ -1,97 +1,88 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "HuelvaPedia Documentation"
+description: "Your digital encyclopedia for Huelva, Spain - Built with Java, Material Design, and Firebase"
 ---
 
-## Setting up
+<div style={{
+  background: 'linear-gradient(135deg, #94cb04 0%, #545454 100%)',
+  padding: '60px 40px',
+  borderRadius: '8px',
+  color: 'white',
+  marginBottom: '40px'
+}}>
+  <h1 style={{
+    fontSize: '48px',
+    fontWeight: '700',
+    marginBottom: '16px',
+    color: 'white'
+  }}>HuelvaPedia</h1>
+  <p style={{
+    fontSize: '18px',
+    opacity: '0.95',
+    maxWidth: '600px'
+  }}>
+    An informative Android application serving as a digital encyclopedia for the province and city of Huelva, Spain. Explore cultural, historical, and geographical richness with dynamic cloud-based content.
+  </p>
+</div>
 
-Get your documentation site up and running in minutes.
+## Key Features
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Cloud-Based Data" icon="cloud" iconType="solid">
+    All information is fetched dynamically from Firebase Realtime Database, ensuring data is always up-to-date without app updates
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Categorized Information" icon="grid" iconType="solid">
+    Browse through different aspects of Huelva including history, gastronomy, and places of interest
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Real-Time Weather" icon="sun" iconType="solid">
+    Live weather integration powered by OpenWeatherMap API for current Huelva conditions
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Material Design" icon="mobile" iconType="solid">
+    Clean and intuitive Android interface utilizing modern Material Design components
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Get Started
 
-Everything you need to create world-class documentation.
+<CardGroup cols={2}>
+  <Card 
+    title="Installation" 
+    icon="download" 
+    href="/installation"
+  >
+    Set up the development environment and clone the repository
+  </Card>
+  <Card 
+    title="Firebase Setup" 
+    icon="fire" 
+    href="/firebase-setup"
+  >
+    Configure Firebase Realtime Database for your app instance
+  </Card>
+  <Card 
+    title="Architecture Overview" 
+    icon="sitemap" 
+    href="/architecture/overview"
+  >
+    Understand the app structure and component organization
+  </Card>
+  <Card 
+    title="API Reference" 
+    icon="code" 
+    href="/api/elementos"
+  >
+    Explore core classes and their methods
+  </Card>
+</CardGroup>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## Tech Stack
 
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<Note>
+  **Language:** Java  
+  **Minimum SDK:** API 27 (Android 8.1 - Oreo)  
+  **Target SDK:** API 30 (Android 11)  
+  **Backend:** Google Firebase Realtime Database  
+  **Network Requests:** Android Volley  
+  **Image Loading:** Picasso  
+  **UI Components:** AndroidX, Material Design, ConstraintLayout, CardView
+</Note>

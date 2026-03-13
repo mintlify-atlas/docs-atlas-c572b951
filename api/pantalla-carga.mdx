@@ -1,0 +1,219 @@
+---
+title: "PantallaCarga"
+description: "Splash screen activity with network connectivity checking and animations"
+---
+
+## Overview
+
+`PantallaCarga` is the splash screen activity that displays when the app launches. It checks for internet connectivity, displays loading animations, and navigates to the main activity after a delay. If no connection is detected, it monitors connectivity and proceeds once available.
+
+## Class Signature
+
+```java
+public class PantallaCarga extends AppCompatActivity
+```
+
+**Package:** `com.example.huelvapedia`
+
+**Extends:** `AppCompatActivity`
+
+## Constants
+
+| Constant | Type | Value | Description |
+|----------|------|-------|-------------|
+| `DURACION_CARGA` | `int` | `5000` | Loading duration in milliseconds (5 seconds) |
+
+## Fields
+
+### Animation Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `animacionSuperior` | `Animation` | Top animation for logo |
+| `animacionInferior` | `Animation` | Bottom animation for text and progress bar |
+
+### UI Components
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `imagenLogo` | `ImageView` | App logo image |
+| `textoCarga` | `TextView` | Loading text |
+| `sloganCarga` | `TextView` | Slogan text |
+| `progressBar` | `ProgressBar` | Loading progress indicator |
+
+### Connectivity Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `hayConexion` | `boolean` | Flag indicating if internet connection is available (default: `true`) |
+| `monitorizando` | `boolean` | Flag indicating if actively monitoring network (default: `false`) |
+
+### Handler and Callbacks
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `handler` | `Handler` | Handler for delayed navigation |
+| `navegarAPrincipal` | `Runnable` | Runnable that navigates to MainActivity |
+| `connectivityCallback` | `NetworkCallback` | Callback for network state changes |
+
+## Lifecycle Methods
+
+<Accordion title="onCreate()">
+  ```java
+  @Override
+  protected void onCreate(Bundle savedInstanceState)
+  ```
+  
+  Initializes the splash screen:
+  1. Sets fullscreen mode
+  2. Hides action bar
+  3. Loads animations from resources (`R.anim.top_animation`, `R.anim.bottom_animation`)
+  4. Binds UI components
+  5. Sets progress bar color to white
+  6. Applies animations to views
+  7. Checks connectivity
+  
+  <ParamField path="savedInstanceState" type="Bundle">
+    Saved state from previous instance
+  </ParamField>
+  
+  **Location:** `PantallaCarga.java:85`
+</Accordion>
+
+<Accordion title="onPause()">
+  ```java
+  @Override
+  protected void onPause()
+  ```
+  
+  Unregisters the network callback if monitoring is active to prevent memory leaks.
+  
+  **Location:** `PantallaCarga.java:110`
+</Accordion>
+
+<Accordion title="onDestroy()">
+  ```java
+  @Override
+  protected void onDestroy()
+  ```
+  
+  Cancels all pending handler callbacks to prevent memory leaks.
+  
+  **Location:** `PantallaCarga.java:121`
+</Accordion>
+
+## Connectivity Methods
+
+<Accordion title="checkConnectivity()">
+  ```java
+  private void checkConnectivity()
+  ```
+  
+  Checks the current network connectivity state:
+  
+  **If connected:**
+  - Sets `hayConexion` to `true`
+  - Schedules navigation to MainActivity after `DURACION_CARGA` milliseconds
+  
+  **If not connected:**
+  - Sets `hayConexion` to `false`
+  - Displays toast message: "SE DEBE DISPONER DE CONEXIÓN A INTERNET"
+  - Registers `NetworkCallback` to monitor for connection
+  - Sets `monitorizando` to `true`
+  
+  Uses `ConnectivityManager` and `NetworkInfo` to check active network status.
+  
+  **Location:** `PantallaCarga.java:62`
+</Accordion>
+
+## Runnable: navegarAPrincipal
+
+```java
+private final Runnable navegarAPrincipal = () -> {
+    Intent intent = new Intent(PantallaCarga.this, MainActivity.class);
+    startActivity(intent);
+    finish();
+};
+```
+
+Navigates to MainActivity and finishes the splash screen activity.
+
+**Location:** `PantallaCarga.java:39`
+
+## NetworkCallback: connectivityCallback
+
+<Accordion title="onAvailable()">
+  ```java
+  @Override
+  public void onAvailable(Network network)
+  ```
+  
+  Called when network becomes available:
+  - Sets `hayConexion` to `true`
+  - Schedules navigation to MainActivity after `DURACION_CARGA` milliseconds
+  
+  <ParamField path="network" type="Network">
+    The available network
+  </ParamField>
+  
+  **Location:** `PantallaCarga.java:48`
+</Accordion>
+
+<Accordion title="onLost()">
+  ```java
+  @Override
+  public void onLost(Network network)
+  ```
+  
+  Called when network connection is lost:
+  - Sets `hayConexion` to `false`
+  - Displays toast message: "SE DEBE DISPONER DE CONEXIÓN A INTERNET"
+  
+  <ParamField path="network" type="Network">
+    The lost network
+  </ParamField>
+  
+  
+  **Location:** `PantallaCarga.java:55`
+</Accordion>
+
+## UI Configuration
+
+### Fullscreen Mode
+```java
+getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, 
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN);
+```
+
+### ProgressBar Color
+```java
+progressBar.getIndeterminateDrawable()
+          .setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+```
+
+### Animation Assignment
+```java
+imagenLogo.setAnimation(animacionSuperior);
+textoCarga.setAnimation(animacionInferior);
+sloganCarga.setAnimation(animacionInferior);
+progressBar.setAnimation(animacionInferior);
+```
+
+## Network Request Configuration
+
+The activity registers a `NetworkCallback` with the following capabilities:
+
+```java
+new NetworkRequest.Builder()
+    .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    .build()
+```
+
+## Flow Diagram
+
+1. **onCreate()** → Initialize UI and animations
+2. **checkConnectivity()** → Check network status
+3. **If connected** → Schedule navigation after 5 seconds
+4. **If not connected** → Show toast, register NetworkCallback
+5. **When network available** → Navigate to MainActivity
+6. **onPause()/onDestroy()** → Clean up callbacks and handlers

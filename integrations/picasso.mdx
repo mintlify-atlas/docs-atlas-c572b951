@@ -1,0 +1,225 @@
+---
+title: 'Picasso Image Loading'
+description: 'Efficient image loading with Picasso library in RecyclerView'
+---
+
+## Overview
+
+HuelvaPedia uses the Picasso library for efficient image loading and caching. Picasso handles downloading images from URLs, memory and disk caching, and automatic scaling, making it ideal for displaying dynamic content in RecyclerView lists.
+
+## Dependency
+
+Add Picasso to your `app/build.gradle`:
+
+```gradle app/build.gradle
+implementation 'com.squareup.picasso:picasso:2.8'
+```
+
+## Basic Usage in RecyclerView
+
+Picasso is used in the `Adaptador` class to load images into RecyclerView items:
+
+```java Adaptador.java
+import com.squareup.picasso.Picasso;
+
+@Override
+public void onBindViewHolder(@NonNull MiViewHolder holder, int position)
+{
+    Elementos elemento = elementos.get(position);
+    
+    holder.nombre.setText(elemento.getNombre());
+    holder.descripcion.setText(elemento.getDescripcion());
+    Picasso.get().load(elemento.getFoto()).into(holder.imagen);
+}
+```
+
+## Key Features
+
+### Simple Image Loading
+
+The basic pattern for loading images with Picasso:
+
+```java
+Picasso.get().load(imageUrl).into(imageView);
+```
+
+Components:
+- `Picasso.get()` - Returns the singleton Picasso instance
+- `.load(url)` - Specifies the image URL to load
+- `.into(imageView)` - Sets the target ImageView
+
+## Integration with RecyclerView
+
+### Adapter Implementation
+
+<CodeGroup>
+
+```java ViewHolder Setup
+static class MiViewHolder extends RecyclerView.ViewHolder
+{
+    TextView nombre, descripcion;
+    ImageView imagen;
+    Button botonUbicacion, botonLlamar, botonEnlace;
+
+    public MiViewHolder(@NonNull View itemView)
+    {
+        super(itemView);
+        
+        nombre = itemView.findViewById(R.id.tenombre);
+        descripcion = itemView.findViewById(R.id.tedescri);
+        imagen = itemView.findViewById(R.id.imagen);
+        botonUbicacion = itemView.findViewById(R.id.botonubi);
+        botonLlamar = itemView.findViewById(R.id.botonllamar);
+        botonEnlace = itemView.findViewById(R.id.botonwiki);
+    }
+}
+```
+
+```java Image Loading
+@Override
+public void onBindViewHolder(@NonNull MiViewHolder holder, int position)
+{
+    Elementos elemento = elementos.get(position);
+    
+    // Set text content
+    holder.nombre.setText(elemento.getNombre());
+    holder.descripcion.setText(elemento.getDescripcion());
+    
+    // Load image from URL
+    Picasso.get().load(elemento.getFoto()).into(holder.imagen);
+    
+    // Additional button configuration...
+}
+```
+
+</CodeGroup>
+
+## Automatic Features
+
+Picasso automatically handles:
+
+1. **Image Downloading** - Fetches images from remote URLs
+2. **Memory Caching** - Keeps recently used images in memory
+3. **Disk Caching** - Stores images on device storage for offline access
+4. **Recycling** - Cancels image requests when views are recycled
+5. **Thread Management** - Performs loading on background threads
+
+## Performance Benefits in RecyclerView
+
+### Scroll Performance
+
+Picasso optimizes RecyclerView scrolling by:
+- Automatically canceling pending requests for recycled views
+- Reusing cached images when scrolling back to previously viewed items
+- Loading images asynchronously to prevent UI blocking
+
+### Memory Management
+
+The library manages memory efficiently:
+- Automatic downsampling to match ImageView dimensions
+- LRU (Least Recently Used) cache eviction
+- Automatic response to low memory conditions
+
+## Advanced Usage Examples
+
+### Placeholder and Error Images
+
+```java
+Picasso.get()
+    .load(imageUrl)
+    .placeholder(R.drawable.placeholder)
+    .error(R.drawable.error_image)
+    .into(imageView);
+```
+
+### Image Transformations
+
+```java
+Picasso.get()
+    .load(imageUrl)
+    .resize(800, 600)
+    .centerCrop()
+    .into(imageView);
+```
+
+### Fit to ImageView Dimensions
+
+```java
+Picasso.get()
+    .load(imageUrl)
+    .fit()
+    .centerInside()
+    .into(imageView);
+```
+
+## Data Source Integration
+
+In HuelvaPedia, image URLs come from Firebase Realtime Database:
+
+```java
+// Elementos object contains the image URL
+Elementos elemento = dataSnapshot.getValue(Elementos.class);
+
+// URL is stored in the "foto" field
+String imageUrl = elemento.getFoto();
+
+// Picasso loads the image
+Picasso.get().load(imageUrl).into(imageView);
+```
+
+## Best Practices
+
+<Tip>
+  Always use `Picasso.get()` to access the singleton instance rather than creating new instances.
+</Tip>
+
+<Tip>
+  Let Picasso handle image scaling automatically based on ImageView dimensions to optimize memory usage.
+</Tip>
+
+<Warning>
+  Ensure image URLs are valid and accessible. Consider adding placeholder and error images for better user experience.
+</Warning>
+
+## Common Patterns
+
+### Loading from Firebase URLs
+
+```java Adaptador.java
+// Firebase provides the image URL
+String fotoUrl = elemento.getFoto();
+
+// Picasso handles the rest
+Picasso.get().load(fotoUrl).into(holder.imagen);
+```
+
+### Handling Null or Empty URLs
+
+```java
+String imageUrl = elemento.getFoto();
+if (imageUrl != null && !imageUrl.isEmpty()) {
+    Picasso.get().load(imageUrl).into(holder.imagen);
+} else {
+    holder.imagen.setImageResource(R.drawable.default_image);
+}
+```
+
+## Why Picasso?
+
+**Advantages:**
+- Minimal boilerplate code
+- Automatic memory and disk caching
+- Excellent RecyclerView integration
+- Request cancellation on view recycling
+- Synchronous loading support for testing
+- Fluent API design
+
+**Ideal for:**
+- Loading images in lists (RecyclerView/ListView)
+- Displaying user-generated content
+- Remote image URLs
+- Apps requiring efficient image caching
+
+## Implementation File
+
+- Adaptador.java:48 - Picasso image loading in RecyclerView adapter

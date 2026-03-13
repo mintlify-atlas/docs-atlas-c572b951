@@ -1,0 +1,230 @@
+---
+title: "Adaptador"
+description: "RecyclerView adapter for displaying Elementos items with dynamic button visibility"
+---
+
+## Overview
+
+`Adaptador` is a `RecyclerView.Adapter` implementation that displays a list of `Elementos` objects. It handles dynamic UI behavior including button visibility based on available data and the `ultimo` field, as well as click handling for navigation and actions.
+
+## Class Signature
+
+```java
+public class Adaptador extends RecyclerView.Adapter<Adaptador.MiViewHolder> 
+                       implements View.OnClickListener
+```
+
+**Package:** `com.example.huelvapedia`
+
+**Extends:** `RecyclerView.Adapter<Adaptador.MiViewHolder>`
+
+**Implements:** `View.OnClickListener`
+
+## Dependencies
+
+- Android RecyclerView
+- Picasso (for image loading)
+- Elementos data model
+
+## Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `context` | `Context` | Android context for inflating layouts and starting activities |
+| `elementos` | `ArrayList<Elementos>` | List of elements to display |
+| `listener` | `View.OnClickListener` | Optional click listener for item clicks |
+
+## Constructor
+
+<Accordion title="Adaptador(Context context, ArrayList<Elementos> elementos)">
+  ```java
+  public Adaptador(Context context, ArrayList<Elementos> elementos)
+  ```
+  
+  Creates a new adapter instance.
+  
+  <ParamField path="context" type="Context">
+    Android context for layout inflation and activity launching
+  </ParamField>
+  
+  <ParamField path="elementos" type="ArrayList<Elementos>">
+    List of Elementos objects to display
+  </ParamField>
+  
+  **Location:** `Adaptador.java:26`
+</Accordion>
+
+## RecyclerView Adapter Methods
+
+<Accordion title="onCreateViewHolder()">
+  ```java
+  @NonNull
+  @Override
+  public MiViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType)
+  ```
+  
+  Creates a new ViewHolder by inflating the `principal` layout and setting up click listener.
+  
+  <ParamField path="parent" type="ViewGroup">
+    The parent ViewGroup
+  </ParamField>
+  
+  <ParamField path="viewType" type="int">
+    The view type of the new View
+  </ParamField>
+  
+  **Returns:** `MiViewHolder` - A new ViewHolder instance
+  
+  **Location:** `Adaptador.java:34`
+</Accordion>
+
+<Accordion title="onBindViewHolder()">
+  ```java
+  @Override
+  public void onBindViewHolder(@NonNull MiViewHolder holder, int position)
+  ```
+  
+  Binds data to the ViewHolder at the specified position. Implements complex logic for:
+  - Setting text and image data using Picasso
+  - Checking for available data (location, phone, web link)
+  - Button visibility based on the `ultimo` field
+  - Click handlers for navigation and action buttons
+  
+  ### Behavior Logic:
+  
+  **When `ultimo` is `false`:**
+  - All action buttons are hidden
+  - If no location, phone, or link data exists, clicking navigates to `Secundaria` activity
+  
+  **When `ultimo` is `true`:**
+  - Location button: Shows if `ubicacion1` and `ubicacion2` are not null, launches maps
+  - Phone button: Shows if `telefono` is not null, launches dialer
+  - Web link button: Shows if `enlace` is not null, opens browser
+  
+  <ParamField path="holder" type="MiViewHolder">
+    The ViewHolder to bind data to
+  </ParamField>
+  
+  <ParamField path="position" type="int">
+    Position of the item in the dataset
+  </ParamField>
+  
+  **Location:** `Adaptador.java:42`
+</Accordion>
+
+<Accordion title="getItemCount()">
+  ```java
+  @Override
+  public int getItemCount()
+  ```
+  
+  Returns the total number of items in the dataset.
+  
+  **Returns:** `int` - Size of the elementos list
+  
+  **Location:** `Adaptador.java:117`
+</Accordion>
+
+## Click Handling Methods
+
+<Accordion title="setOnClickListener()">
+  ```java
+  public void setOnClickListener(View.OnClickListener listener)
+  ```
+  
+  Sets a custom click listener for item clicks.
+  
+  <ParamField path="listener" type="View.OnClickListener">
+    The click listener to set
+  </ParamField>
+  
+  **Location:** `Adaptador.java:122`
+</Accordion>
+
+<Accordion title="onClick()">
+  ```java
+  @Override
+  public void onClick(View v)
+  ```
+  
+  Handles click events and delegates to the registered listener if present.
+  
+  <ParamField path="v" type="View">
+    The clicked view
+  </ParamField>
+  
+  **Location:** `Adaptador.java:128`
+</Accordion>
+
+## Inner Class: MiViewHolder
+
+```java
+static class MiViewHolder extends RecyclerView.ViewHolder
+```
+
+ViewHolder class that holds references to UI components in the item layout.
+
+### Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `nombre` | `TextView` | Displays element name |
+| `descripcion` | `TextView` | Displays element description |
+| `imagen` | `ImageView` | Displays element photo |
+| `botonUbicacion` | `Button` | Map/location button |
+| `botonLlamar` | `Button` | Phone call button |
+| `botonEnlace` | `Button` | Web link button |
+
+<Accordion title="MiViewHolder Constructor">
+  ```java
+  public MiViewHolder(@NonNull View itemView)
+  ```
+  
+  Initializes the ViewHolder by finding all views by their IDs:
+  - `R.id.tenombre` - Name TextView
+  - `R.id.tedescri` - Description TextView
+  - `R.id.imagen` - Image ImageView
+  - `R.id.botonubi` - Location Button
+  - `R.id.botonllamar` - Call Button
+  - `R.id.botonwiki` - Web link Button
+  
+  <ParamField path="itemView" type="View">
+    The item view containing all child views
+  </ParamField>
+  
+  **Location:** `Adaptador.java:141`
+</Accordion>
+
+## Action Button Intents
+
+### Location Button
+```java
+Intent intent = new Intent(Intent.ACTION_VIEW);
+intent.setData(Uri.parse(elemento.getUbicacion1() + Uri.encode(elemento.getUbicacion2())));
+Intent chooser = Intent.createChooser(intent, "Launch Maps");
+v.getContext().startActivity(chooser);
+```
+
+### Phone Button
+```java
+Intent intent = new Intent(Intent.ACTION_DIAL);
+intent.setData(Uri.parse("tel:" + elemento.getTelefono()));
+v.getContext().startActivity(intent);
+```
+
+### Web Link Button
+```java
+Uri link = Uri.parse(elemento.getEnlace());
+Intent intent = new Intent(Intent.ACTION_VIEW, link);
+v.getContext().startActivity(intent);
+```
+
+## Usage Example
+
+```java
+ArrayList<Elementos> elementosList = new ArrayList<>();
+// ... populate list ...
+
+Adaptador adaptador = new Adaptador(context, elementosList);
+recyclerView.setAdapter(adaptador);
+```

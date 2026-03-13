@@ -1,0 +1,218 @@
+---
+title: Main Activity
+description: Primary screen displaying main categories from Firebase with RecyclerView and weather navigation
+---
+
+## Overview
+
+The `MainActivity` serves as the app's main interface, displaying top-level categories retrieved from Firebase Realtime Database. It uses a RecyclerView with a custom adapter to present category cards and includes a button to access the weather activity.
+
+**File Location:** `app/src/main/java/com/example/huelvapedia/MainActivity.java`
+
+## Key Features
+
+- **Firebase Integration**: Real-time data synchronization from Firebase Realtime Database
+- **RecyclerView Display**: Efficient list rendering of category items
+- **Custom Adapter**: Uses Adaptador class for ViewHolder pattern implementation
+- **Weather Navigation**: Direct access to weather information for Huelva
+- **Branded Action Bar**: Displays Huelva coat of arms icon
+
+## Class Variables
+
+```java
+private DatabaseReference reference;
+private RecyclerView recyclerView;
+private ArrayList<Elementos> listaElementos;
+private Adaptador adaptador;
+private Button botonTiempo;
+```
+
+<Accordion title="Variable Details">
+- **reference**: Firebase database reference pointing to "principal" node
+- **recyclerView**: Container for displaying category items
+- **listaElementos**: ArrayList holding Elementos objects from Firebase
+- **adaptador**: Custom adapter managing RecyclerView items
+- **botonTiempo**: Button to navigate to weather activity
+</Accordion>
+
+## onCreate() Method
+
+Initializes the activity, sets up UI components, configures Firebase listener, and establishes navigation.
+
+```java
+@Override
+protected void onCreate(Bundle savedInstanceState)
+{
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    botonTiempo = findViewById(R.id.botontiempo);
+
+    ActionBar actionBar = getSupportActionBar();
+    actionBar.setIcon(R.mipmap.ic_escudohuelva);
+    actionBar.setDisplayShowHomeEnabled(true);
+
+    recyclerView = findViewById(R.id.recicler);
+    recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+    listaElementos = new ArrayList<>();
+
+    reference = FirebaseDatabase.getInstance().getReference().child("principal");
+
+    reference.addValueEventListener(new ValueEventListener()
+    {
+        @Override
+        public void onDataChange(@NonNull DataSnapshot snapshot)
+        {
+            listaElementos.clear(); // Prevents data duplication on Firebase updates
+            for (DataSnapshot dataSnapshot : snapshot.getChildren())
+            {
+                Elementos elemento = dataSnapshot.getValue(Elementos.class);
+                listaElementos.add(elemento);
+            }
+            adaptador = new Adaptador(MainActivity.this, listaElementos);
+            recyclerView.setAdapter(adaptador);
+        }
+
+        @Override
+        public void onCancelled(@NonNull DatabaseError error)
+        {
+            Toast.makeText(MainActivity.this, "Algo ha fallado", Toast.LENGTH_SHORT).show();
+        }
+    });
+
+    botonTiempo.setOnClickListener(v -> {
+        Intent intent = new Intent(v.getContext(), Tiempo.class);
+        startActivity(intent);
+    });
+}
+```
+
+## Implementation Details
+
+### Action Bar Configuration
+
+<Accordion title="Action Bar Setup">
+```java
+ActionBar actionBar = getSupportActionBar();
+actionBar.setIcon(R.mipmap.ic_escudohuelva);
+actionBar.setDisplayShowHomeEnabled(true);
+```
+
+**Purpose:**
+- Displays the Huelva coat of arms icon in the action bar
+- Enables home icon display for branding consistency
+- Provides visual identity throughout the app
+</Accordion>
+
+### RecyclerView Configuration
+
+```java
+recyclerView = findViewById(R.id.recicler);
+recyclerView.setLayoutManager(new LinearLayoutManager(this));
+```
+
+- Uses `LinearLayoutManager` for vertical scrolling list
+- Provides efficient view recycling for performance
+- Automatically handles view creation and binding via adapter
+
+### Firebase Data Loading
+
+<Accordion title="Firebase ValueEventListener">
+The activity implements a real-time listener that responds to data changes in the "principal" node:
+
+```java
+reference.addValueEventListener(new ValueEventListener()
+{
+    @Override
+    public void onDataChange(@NonNull DataSnapshot snapshot)
+    {
+        listaElementos.clear(); // Prevents duplication
+        for (DataSnapshot dataSnapshot : snapshot.getChildren())
+        {
+            Elementos elemento = dataSnapshot.getValue(Elementos.class);
+            listaElementos.add(elemento);
+        }
+        adaptador = new Adaptador(MainActivity.this, listaElementos);
+        recyclerView.setAdapter(adaptador);
+    }
+
+    @Override
+    public void onCancelled(@NonNull DatabaseError error)
+    {
+        Toast.makeText(MainActivity.this, "Algo ha fallado", Toast.LENGTH_SHORT).show();
+    }
+});
+```
+
+**Key Points:**
+- `onDataChange()`: Triggered when data is loaded or updated
+- `listaElementos.clear()`: Prevents duplicate entries on Firebase updates
+- Creates new adapter instance with updated data
+- `onCancelled()`: Handles database errors with user feedback
+</Accordion>
+
+### Weather Button Navigation
+
+```java
+botonTiempo.setOnClickListener(v -> {
+    Intent intent = new Intent(v.getContext(), Tiempo.class);
+    startActivity(intent);
+});
+```
+
+Provides direct access to weather information for Huelva using lambda expression for concise click handling.
+
+## Data Flow
+
+1. **Activity Creation** → onCreate() initializes UI and Firebase reference
+2. **Firebase Connection** → Establishes listener on "principal" database node
+3. **Data Reception** → onDataChange() receives category data
+4. **Data Processing** → Converts DataSnapshot to Elementos objects
+5. **Adapter Creation** → Instantiates Adaptador with category list
+6. **UI Update** → RecyclerView displays categories via adapter
+7. **User Interaction** → Categories clickable via Adaptador click handling
+
+## Firebase Database Structure
+
+```
+Firebase Root
+└── principal
+    ├── category1
+    │   ├── nombre: "Category Name"
+    │   ├── descripcion: "Description"
+    │   ├── foto: "https://..."
+    │   └── ultimo: false
+    ├── category2
+    │   └── ...
+    └── category3
+        └── ...
+```
+
+<Note>
+The activity uses `addValueEventListener()` which maintains a persistent connection to Firebase, automatically updating the UI when data changes in the database.
+</Note>
+
+<Warning>
+The listener clears and recreates the adapter on every data change. For large datasets with frequent updates, consider using a more efficient update mechanism like DiffUtil.
+</Warning>
+
+## Related Components
+
+- [Adaptador](/components/adapter) - Custom adapter for RecyclerView display
+- [Secundaria](/components/secondary-activity) - Subcategory display activity
+- [Tiempo](/components/weather-activity) - Weather information display
+- [Elementos](/architecture/data-model#elementos) - Data model class
+
+## UI Layout
+
+**Layout File:** `R.layout.activity_main`
+
+**Key Views:**
+- `R.id.recicler` - RecyclerView for categories
+- `R.id.botontiempo` - Weather navigation button
+
+## Navigation Targets
+
+- **Tiempo.class** - Weather activity (via button click)
+- **Secundaria.class** - Subcategory activity (via adapter item click)
