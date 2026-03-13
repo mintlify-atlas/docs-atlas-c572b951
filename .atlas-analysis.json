@@ -1,0 +1,82 @@
+{
+  "projectType": "frontend",
+  "projectName": "HuelvaPedia",
+  "projectDescription": "An informative Android app serving as a digital encyclopedia for Huelva, Spain.",
+  "theme": "almond",
+  "primaryColor": "#94cb04",
+  "lightColor": "#545454",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "firebase-setup"
+            ]
+          },
+          {
+            "group": "Architecture",
+            "pages": [
+              "architecture/overview",
+              "architecture/activities",
+              "architecture/data-model"
+            ]
+          },
+          {
+            "group": "Components",
+            "pages": [
+              "components/splash-screen",
+              "components/main-activity",
+              "components/secondary-activity",
+              "components/weather-activity",
+              "components/adapter"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/firebase",
+              "integrations/weather-api",
+              "integrations/picasso"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Core Classes",
+            "pages": [
+              "api/elementos",
+              "api/adaptador",
+              "api/pantalla-carga",
+              "api/tiempo"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Cloud-based data with Firebase Realtime Database",
+    "Categorized information browser for Huelva",
+    "Real-time weather integration",
+    "Material Design UI components",
+    "Dynamic content loading with RecyclerView",
+    "Network connectivity validation"
+  ],
+  "publicApiSurface": [
+    "Elementos.class",
+    "Adaptador.class",
+    "MainActivity.class",
+    "Secundaria.class",
+    "PantallaCarga.class",
+    "Tiempo.class"
+  ]
+}
